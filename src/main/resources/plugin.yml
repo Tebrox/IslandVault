@@ -1,0 +1,7 @@
+name: IslandVault
+version: '1.0-SNAPSHOT'
+main: de.tebrox.islandVault.IslandVault
+api-version: '1.21'
+load: STARTUP
+authors: [ Tebrox ]
+description: Ein virtuelles Insellager

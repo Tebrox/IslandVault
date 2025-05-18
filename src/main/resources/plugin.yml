@@ -5,3 +5,9 @@ api-version: '1.21'
 load: STARTUP
 authors: [ Tebrox ]
 description: Ein virtuelles Insellager
+
+commands:
+  islandvault:
+    desciption: Open the player island vault
+    usage: /islandvault
+    aliases: [vault, ivault, iv]

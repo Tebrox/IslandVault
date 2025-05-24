@@ -2,7 +2,8 @@ package de.tebrox.islandVault.enums;
 
 public enum Messages {
     MENU_TITLE("messages.menuTitle"),
-    NO_PLAYER("messages.noPlayer");
+    NO_PLAYER("messages.noPlayer"),
+    NO_PERMISSION("messages.noPermission");
 
     private String label;
 

@@ -26,6 +26,7 @@ public final class IslandVault extends JavaPlugin {
     private static VaultManager vaultManager;
     FileConfiguration config = getConfig();
     private static HashMap<String, List<String>> permissionGroups = new HashMap<>();
+    private static List<String> itemLore = new ArrayList<>();
 
     @Override
     public void onEnable() {
@@ -43,7 +44,7 @@ public final class IslandVault extends JavaPlugin {
         itemManager = new ItemManager(this);
         vaultManager = new VaultManager(this);
 
-        this.getCommand("islandvault").setExecutor(new OpenCommand());
+        this.getCommand("insellager").setExecutor(new OpenCommand());
 
         PluginManager manager = getServer().getPluginManager();
 
@@ -61,6 +62,7 @@ public final class IslandVault extends JavaPlugin {
         for(Material material : itemManager.getMaterialList()) {
             manager.addPermission(new Permission(Permissions.VAULT.getLabel() + material.toString().toLowerCase()));
         }
+        manager.addPermission(new Permission(Permissions.CAN_OPEN_MENU.getLabel()));
 
         getServer().getPluginManager().registerEvents(new JoinLeaveListener(), this);
         getServer().getPluginManager().registerEvents(new InventoryCloseListener(), this);
@@ -70,16 +72,22 @@ public final class IslandVault extends JavaPlugin {
                 IslandVault.getVaultManager().loadVault(player);
             }
         }
+
+        itemLore = config.getStringList(Permissions.MESSAGE_ITEMLORE.getLabel());
+
     }
 
     @Override
     public void onDisable() {
-        for(Map.Entry<UUID, PlayerVaultUtils> entry : getVaultManager().getVaults().entrySet()) {
-            UUID uuid = entry.getKey();
-            PlayerVaultUtils playerVaultUtils = entry.getValue();
-            IslandVault.getVaultManager().saveVault(playerVaultUtils);
-            IslandVault.getVaultManager().getVaults().remove(uuid);
+        if(getVaultManager().getVaults().size() > 0) {
+            for(Map.Entry<UUID, PlayerVaultUtils> entry : getVaultManager().getVaults().entrySet()) {
+                UUID uuid = entry.getKey();
+                PlayerVaultUtils playerVaultUtils = entry.getValue();
+                IslandVault.getVaultManager().saveVault(playerVaultUtils);
+                IslandVault.getVaultManager().getVaults().remove(uuid);
+            }
         }
+
     }
 
     public static IslandVault getPlugin() {
@@ -98,4 +106,7 @@ public final class IslandVault extends JavaPlugin {
         return permissionGroups;
     }
 
+    public static List<String> getItemLore() {
+        return itemLore;
+    }
 }

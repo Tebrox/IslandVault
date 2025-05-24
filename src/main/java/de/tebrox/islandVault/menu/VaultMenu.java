@@ -29,6 +29,16 @@ public class VaultMenu extends PaginatedMenu {
     public List<ItemStack> dataToItems() {
         List<ItemStack> vaultItems = IslandVault.getVaultManager().getPlayerVaultItems(playerMenuUtility.getOwner().getUniqueId());
         Collections.sort(vaultItems, Comparator.comparing(ItemStack::getType));
+
+        int size = vaultItems.size();
+        int rest = size % maxItemsPerPage;
+        if(rest > 0) {
+            int z = maxItemsPerPage - rest;
+            for(int i = 0; i < z; i++) {
+                vaultItems.add(FILLER_GLASS);
+            }
+        }
+
         return vaultItems;
     }
 
@@ -64,11 +74,15 @@ public class VaultMenu extends PaginatedMenu {
                         if(IslandVault.getVaultManager().addItemToVault(item.getType(), item.getAmount(), player)) {
                             invalidateCache();
                             reloadItems();
-                            player.setItemOnCursor(null);
                             player.getInventory().setItem(slot, null);
                         }
                     }else if(inventoryClickEvent.isRightClick()) {
-
+                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), 1, player)) {
+                            invalidateCache();
+                            reloadItems();
+                            ItemStack tempItem = new ItemStack(item.getType(), item.getAmount() - 1);
+                            player.getInventory().setItem(slot, tempItem);
+                        }
                     }
                 }
             }
@@ -116,20 +130,16 @@ public class VaultMenu extends PaginatedMenu {
                     boolean isRightClick = inventoryClickEvent.isRightClick();
                     boolean isShiftClick = inventoryClickEvent.isShiftClick();
 
-                    if(cursor != null && cursor.getType() == item.getType()) {
-                        if(!isShiftClick && isRightClick) {
-                            int cursorAmount = cursor.getAmount();
-                            ItemStack tempItem = IslandVault.getVaultManager().getItemFromVault(cursor.getType(), 1, player);
-                            if(tempItem != null) {
-                                ItemStack handItem = new ItemStack(cursor.getType(), cursorAmount + tempItem.getAmount());
-                                player.setItemOnCursor(handItem);
+                    if(cursor != null && cursor.getType() == item.getType() && !isShiftClick && isRightClick) {
+                        int cursorAmount = cursor.getAmount();
+                        ItemStack tempItem = IslandVault.getVaultManager().getItemFromVault(cursor.getType(), 1, player);
+                        if(tempItem != null) {
+                            ItemStack handItem = new ItemStack(cursor.getType(), cursorAmount + tempItem.getAmount());
+                            player.setItemOnCursor(handItem);
 
-                                invalidateCache();
-                                reloadItems();
-                            }
-
+                            invalidateCache();
+                            reloadItems();
                         }
-
                     } else if (cursor == null || cursor.getType() == Material.AIR && item != null) { //taking item out of dsu
 
                         Material mat = item.getType();
@@ -141,6 +151,9 @@ public class VaultMenu extends PaginatedMenu {
                             amount = 1;
                         }
                         handItem = IslandVault.getVaultManager().getItemFromVault(mat, amount, player);
+
+                        if(handItem == null) return;
+
                         if(!isShiftClick) {
                             player.setItemOnCursor(handItem);
                         }else{

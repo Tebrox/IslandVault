@@ -2,10 +2,13 @@ package de.tebrox.islandVault.commands;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.enums.Messages;
+import de.tebrox.islandVault.enums.Permissions;
 import de.tebrox.islandVault.menu.VaultMenu;
+import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.MenuManager;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -22,13 +25,18 @@ public class OpenCommand implements CommandExecutor {
             return true;
         }
 
-        try {
-            MenuManager.openMenu(VaultMenu.class, player);
-        } catch (MenuManagerException e) {
-            throw new RuntimeException(e);
-        } catch (MenuManagerNotSetupException e) {
-            throw new RuntimeException(e);
+        if(player.hasPermission(Permissions.CAN_OPEN_MENU.getLabel())) {
+            try {
+                MenuManager.openMenu(VaultMenu.class, player);
+            } catch (MenuManagerException e) {
+                throw new RuntimeException(e);
+            } catch (MenuManagerNotSetupException e) {
+                throw new RuntimeException(e);
+            }
+        }else{
+            player.sendMessage(ColorTranslator.translateColorCodes(IslandVault.getPlugin().getConfig().getString(Messages.NO_PERMISSION.getLabel())));
         }
+
 
         return true;
     }

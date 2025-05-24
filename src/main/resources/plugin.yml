@@ -7,7 +7,7 @@ authors: [ Tebrox ]
 description: Ein virtuelles Insellager für den OneBlock - New Life Minecraft Server
 
 commands:
-  islandvault:
+  insellager:
     desciption: Open the player island vault
-    usage: /insellager
+    usage: /insellager - Öffnet dein Insellager
     aliases: [lager]

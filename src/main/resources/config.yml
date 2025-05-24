@@ -4,8 +4,15 @@ permission_groups:
   test: [REDSTONE_TORCH, REDSTONE_BLOCK, REDSTONE]
 
 messages:
-  menuTitle: "Insellager"
+  itemLore:
+    - "§9Menge: §r%amount%"
+    - ""
+    - "§eLinksklick: §b%maxstacksize%x"
+    - "§eRechtsklick: §b1x"
+    - "$eShiftklick: $rItem direkt ins Inventar"
+  menuTitle: "Dein Insellager"
   noPlayer: "§cDieser Befehl kann nur vom Spieler ausgeführt werden!"
+  noPermission: "§cDu hast nicht die Berechtigung diesen Befehl zu nutzen!"
   firstPage: "§aErste Seite"
   previousPage: "§aVorherige Seite"
   nextPage: "§aNächste Seite"

@@ -3,7 +3,7 @@ package de.tebrox.islandVault.manager;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.enums.Permissions;
 import de.tebrox.islandVault.utils.PlayerVaultUtils;
-import org.bukkit.Bukkit;
+import me.kodysimpson.simpapi.colors.ColorTranslator;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -12,10 +12,12 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.permissions.Permission;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
 
 public class VaultManager {
     public HashMap<UUID, PlayerVaultUtils> vaults = new HashMap<>();
@@ -184,7 +186,6 @@ public class VaultManager {
             PlayerVaultUtils playerVaultUtils = getVaults().get(player.getUniqueId());
 
             if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
-                ItemStack returnItem = null;
                 for(Map.Entry<Material, Integer> entry : playerVaultUtils.getInventory().entrySet()) {
                     Material key = entry.getKey();
                     int value = entry.getValue();
@@ -193,12 +194,7 @@ public class VaultManager {
                             return null;
                         }
 
-                        if(value > amount) {
-                            returnItem = playerVaultUtils.setItem(material, value, amount);
-                        }else{
-                            returnItem = playerVaultUtils.setItem(material, 0, amount);
-                        }
-                        return returnItem;
+                        return playerVaultUtils.setItem(material, value, amount);
                     }
 
                 }
@@ -208,15 +204,16 @@ public class VaultManager {
     }
 
     public ItemStack getItemStack(Material material, int amount) {
+
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
         List<String> lore = new ArrayList<>();
 
-        lore.add(ChatColor.BLUE + "Menge: " + amount);
-        lore.add("");
-        lore.add(ChatColor.YELLOW + "Linksklick: " + material.getMaxStackSize() + "x");
-        lore.add(ChatColor.YELLOW + "Rechtsklick: 1x");
-        lore.add(ChatColor.YELLOW + "Shiftklick: direkt ins Inventar");
+        for(String loreString : plugin.getItemLore()) {
+            loreString = loreString.replaceAll("%amount%", String.valueOf(amount));
+            loreString = loreString.replaceAll("%maxstacksize%", String.valueOf(material.getMaxStackSize()));
+            lore.add(ChatColor.translateAlternateColorCodes('&', loreString));
+        }
 
         meta.setLore(lore);
 

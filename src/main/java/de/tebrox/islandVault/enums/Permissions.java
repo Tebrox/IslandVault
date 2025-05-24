@@ -4,8 +4,10 @@ public enum Permissions {
 
     VAULT("islandvault.vault."),
     GROUPS("islandvault.groups."),
+    CAN_OPEN_MENU("islandvault.canVaultOpen"),
 
-    GROUPS_CONFIG("permission_groups");
+    GROUPS_CONFIG("permission_groups"),
+    MESSAGE_ITEMLORE("messages.itemLore");
 
     private String label;
 

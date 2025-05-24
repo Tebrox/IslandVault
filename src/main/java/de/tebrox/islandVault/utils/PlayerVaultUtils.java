@@ -37,14 +37,13 @@ public class PlayerVaultUtils {
         return unlockedMaterial;
     }
 
-    public ItemStack setItem(Material material, int amount, int difference) {
-        if(amount > 0) {
-            inventory.put(material, amount - difference);
-        }else{
-            inventory.put(material, 0);
+    public ItemStack setItem(Material material, int vaultAmount, int getAmount) {
+        if(vaultAmount >= getAmount) {
+            inventory.put(material, vaultAmount - getAmount);
+            return new ItemStack(material, getAmount);
         }
-
-        return new ItemStack(material, difference);
+        inventory.put(material, 0);
+        return new ItemStack(material, vaultAmount);
     }
 
 }

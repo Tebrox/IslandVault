@@ -59,7 +59,7 @@ messages:
 
 **blacklist:** Items, die niemals eingelagert werden können (z.B. Spawn-Eier, Köpfe).  
 **permission\_groups:** Gruppen mit mehreren Items, die per eine einzige Permission freigeschaltet werden können (z.B. Ränge).  
-**messages:** Texte für GUI und Feedback, z.B. Tooltips für Items.
+**messages:** Texte für GUI und Feedback, z.B. Tooltips für Items. Farbcodes sind nutzbar.
 
 ## Beispiel für eine Permission-Gruppe "vip"
 

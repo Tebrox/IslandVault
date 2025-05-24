@@ -26,7 +26,7 @@ public class ItemManager {
     private void createMaterialList() {
         Material[] materials = Material.values();
         for(Material mat : materials) {
-            if(!mat.isAir()) {
+            if(!mat.isAir() && !materialIsBlacklisted(mat) && mat.isItem()) {
                 materialList.add(mat);
             }
         }
@@ -34,7 +34,7 @@ public class ItemManager {
 
     public boolean materialIsBlacklisted(Material material) {
         for(String b : getItemBlacklist()) {
-            if(material.toString().toLowerCase().contains(b)) {
+            if(material.toString().toLowerCase().contains(b.toLowerCase())) {
                 return true;
             }
         }

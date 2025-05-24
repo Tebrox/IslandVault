@@ -1,5 +1,5 @@
 name: IslandVault
-version: '1.0'
+version: '1.0.1'
 main: de.tebrox.islandVault.IslandVault
 api-version: '1.21'
 load: STARTUP

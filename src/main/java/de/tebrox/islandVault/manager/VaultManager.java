@@ -2,16 +2,16 @@ package de.tebrox.islandVault.manager;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.enums.Permissions;
-import de.tebrox.islandVault.items.VaultItem;
-import de.tebrox.islandVault.menu.VaultMenu;
 import de.tebrox.islandVault.utils.PlayerVaultUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +25,11 @@ public class VaultManager {
         this.plugin = plugin;
     }
 
+
+    /**
+     * Loads the vault from the file
+     * @param player
+     */
     public void loadVault(Player player) {
         File folder = new File(plugin.getDataFolder() + File.separator + "vaults");
 
@@ -35,7 +40,7 @@ public class VaultManager {
         if(!vaults.containsKey(player.getUniqueId())) {
 
             File dataFile = new File(plugin.getDataFolder() + File.separator + "vaults" + File.separator + player.getUniqueId() + ".yml");
-            List<VaultItem> vaultItemList = new ArrayList<>();
+            HashMap<Material, Integer> vaultItemList = new HashMap<>();
 
             if(!dataFile.exists()) {
 
@@ -48,7 +53,7 @@ public class VaultManager {
                 data.set("Player.name", player.getName());
                 for(Material material : IslandVault.getItemManager().getMaterialList()) {
                     data.set("Inventory." + material, 0);
-                    vaultItemList.add(new VaultItem(material));
+                    vaultItemList.put(material, 0);
                 }
                 try {
                     data.save(dataFile);
@@ -68,13 +73,8 @@ public class VaultManager {
                 Material mat = Material.getMaterial(material);
                 if(!IslandVault.getItemManager().materialIsBlacklisted(mat)) {
                     int amount = data.getInt("Inventory." + material);
-                    vaultItemList.add(new VaultItem(mat, amount));
-                    System.out.println(material + ": " + amount);
+                    vaultItemList.put(mat, amount);
                 }
-            }
-
-            for(VaultItem vaultItem : vaultItemList) {
-                System.out.println("VaultItem (" + vaultItem.getMaterial() + "): " + vaultItem.getAmount());
             }
 
             PlayerVaultUtils utils = new PlayerVaultUtils(player, vaultItemList);
@@ -82,6 +82,10 @@ public class VaultManager {
         }
     }
 
+    /**
+     * Saves the vault to the filestorage
+     * @param playerVaultUtils
+     */
     public void saveVault(PlayerVaultUtils playerVaultUtils) {
         File folder = new File(plugin.getDataFolder() + File.separator + "vaults");
 
@@ -94,9 +98,11 @@ public class VaultManager {
         FileConfiguration data = YamlConfiguration.loadConfiguration(dataFile);
         data.set("Player.name", playerVaultUtils.getPlayer().getName());
 
-        for(VaultItem vaultItem : playerVaultUtils.getInventory()) {
-            if(playerVaultUtils.getUnlockedMaterial().contains(vaultItem.getMaterial())) {
-                data.set("Inventory." + vaultItem.getMaterial(), vaultItem.getAmount());
+        for(Map.Entry<Material, Integer> entry : playerVaultUtils.getInventory().entrySet()) {
+            Material material = entry.getKey();
+            int amount = entry.getValue();
+            if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
+                data.set("Inventory." + material, amount);
             }
         }
 
@@ -108,10 +114,14 @@ public class VaultManager {
 
     }
 
+    /**
+     * Get the list of itemstacks for the specific playervault
+     * @param uuid the players uuid
+     * @return List of itemstacks
+     */
     public List<ItemStack> getPlayerVaultItems(UUID uuid) {
 
         if(!getVaults().containsKey(uuid)) {
-            System.out.println("No Items at inventory from " + Bukkit.getPlayer(uuid));
             return null;
         }
 
@@ -139,21 +149,79 @@ public class VaultManager {
         }
 
         List<ItemStack> items = new ArrayList<>();
-        List<VaultItem> vaultItems = playerVaultUtils.getInventory();
+        HashMap<Material, Integer> vaultItems = playerVaultUtils.getInventory();
         List<Material> unlockedMaterials = playerVaultUtils.getUnlockedMaterial();
 
-        for(VaultItem vaultItem : vaultItems) {
-            if(unlockedMaterials.contains(vaultItem.getMaterial())) {
-                items.add(vaultItem.getItemStack());
+        for(Map.Entry<Material, Integer> entry : vaultItems.entrySet()) {
+            Material material = entry.getKey();
+            int amount = entry.getValue();
+            if(unlockedMaterials.contains(material)) {
+                items.add(getItemStack(material, amount));
             }
         }
 
-
-        return items; //TODO save and load from json file
+        return items;
     }
 
     public HashMap<UUID, PlayerVaultUtils> getVaults() {
         return vaults;
     }
 
+    public boolean addItemToVault(Material material, int amount, Player player) {
+        if(getVaults().containsKey(player.getUniqueId())) {
+            PlayerVaultUtils playerVaultUtils = getVaults().get(player.getUniqueId());
+
+            if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
+                playerVaultUtils.getInventory().compute(material, (k, oldAmount) -> oldAmount + amount);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public ItemStack getItemFromVault(Material material, int amount, Player player) {
+        if(getVaults().containsKey(player.getUniqueId())) {
+            PlayerVaultUtils playerVaultUtils = getVaults().get(player.getUniqueId());
+
+            if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
+                ItemStack returnItem = null;
+                for(Map.Entry<Material, Integer> entry : playerVaultUtils.getInventory().entrySet()) {
+                    Material key = entry.getKey();
+                    int value = entry.getValue();
+                    if(key.equals(material)) {
+                        if(value == 0) {
+                            return null;
+                        }
+
+                        if(value > amount) {
+                            returnItem = playerVaultUtils.setItem(material, value, amount);
+                        }else{
+                            returnItem = playerVaultUtils.setItem(material, 0, amount);
+                        }
+                        return returnItem;
+                    }
+
+                }
+            }
+        }
+        return null;
+    }
+
+    public ItemStack getItemStack(Material material, int amount) {
+        ItemStack item = new ItemStack(material, 1);
+        ItemMeta meta = item.getItemMeta();
+        List<String> lore = new ArrayList<>();
+
+        lore.add(ChatColor.BLUE + "Menge: " + amount);
+        lore.add("");
+        lore.add(ChatColor.YELLOW + "Linksklick: " + material.getMaxStackSize() + "x");
+        lore.add(ChatColor.YELLOW + "Rechtsklick: 1x");
+        lore.add(ChatColor.YELLOW + "Shiftklick: direkt ins Inventar");
+
+        meta.setLore(lore);
+
+        item.setItemMeta(meta);
+
+        return item;
+    }
 }

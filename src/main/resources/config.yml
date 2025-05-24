@@ -1,13 +1,13 @@
 blacklist: [spawn_egg, head]
 
 permission_groups:
-  redstone: [REDSTONE_TORCH, REDSTONE_BLOCK, REDSTONE]
+  test: [REDSTONE_TORCH, REDSTONE_BLOCK, REDSTONE]
 
 messages:
   menuTitle: "Insellager"
-  noPlayer: "&cDieser Befehl kann nur vom Spieler ausgeführt werden!"
-  firstPage: "&aErste Seite"
-  previousPage: "&aVorherige Seite"
-  nextPage: "&aNächste Seite"
-  lastPage: "&aLetzte Seite"
-  close: "&4Schließen"
+  noPlayer: "§cDieser Befehl kann nur vom Spieler ausgeführt werden!"
+  firstPage: "§aErste Seite"
+  previousPage: "§aVorherige Seite"
+  nextPage: "§aNächste Seite"
+  lastPage: "§aLetzte Seite"
+  close: "§4Schließen"

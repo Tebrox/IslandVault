@@ -1,13 +1,13 @@
 name: IslandVault
-version: '1.0-SNAPSHOT'
+version: '1.0'
 main: de.tebrox.islandVault.IslandVault
 api-version: '1.21'
 load: STARTUP
 authors: [ Tebrox ]
-description: Ein virtuelles Insellager
+description: Ein virtuelles Insellager für den OneBlock - New Life Minecraft Server
 
 commands:
   islandvault:
     desciption: Open the player island vault
-    usage: /islandvault
-    aliases: [vault, ivault, iv]
+    usage: /insellager
+    aliases: [lager]

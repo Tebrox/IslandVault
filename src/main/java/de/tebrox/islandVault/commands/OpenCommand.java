@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.commands;
 
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.enums.Messages;
 import de.tebrox.islandVault.menu.VaultMenu;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
@@ -16,7 +17,7 @@ public class OpenCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] strings) {
         if (!(commandSender instanceof Player player)) {
-            String message = IslandVault.getPlugin().getConfig().getString("messages.noPlayer");
+            String message = IslandVault.getPlugin().getConfig().getString(Messages.NO_PLAYER.getLabel());
             commandSender.sendMessage(message);
             return true;
         }

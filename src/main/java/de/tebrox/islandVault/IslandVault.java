@@ -3,21 +3,20 @@ package de.tebrox.islandVault;
 import de.tebrox.islandVault.commands.OpenCommand;
 import de.tebrox.islandVault.enums.Permissions;
 import de.tebrox.islandVault.items.ItemManager;
-import de.tebrox.islandVault.items.VaultItem;
 import de.tebrox.islandVault.listeners.InventoryCloseListener;
 import de.tebrox.islandVault.listeners.JoinLeaveListener;
 import de.tebrox.islandVault.manager.VaultManager;
+import de.tebrox.islandVault.utils.PlayerVaultUtils;
 import me.kodysimpson.simpapi.menu.MenuManager;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 
 public final class IslandVault extends JavaPlugin {
@@ -66,12 +65,21 @@ public final class IslandVault extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new JoinLeaveListener(), this);
         getServer().getPluginManager().registerEvents(new InventoryCloseListener(), this);
 
-
+        for(Player player : getServer().getOnlinePlayers()) {
+            if(!IslandVault.getVaultManager().getVaults().containsKey(player.getUniqueId())) {
+                IslandVault.getVaultManager().loadVault(player);
+            }
+        }
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        for(Map.Entry<UUID, PlayerVaultUtils> entry : getVaultManager().getVaults().entrySet()) {
+            UUID uuid = entry.getKey();
+            PlayerVaultUtils playerVaultUtils = entry.getValue();
+            IslandVault.getVaultManager().saveVault(playerVaultUtils);
+            IslandVault.getVaultManager().getVaults().remove(uuid);
+        }
     }
 
     public static IslandVault getPlugin() {

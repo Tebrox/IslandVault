@@ -16,10 +16,6 @@ public class ItemManager {
         this.plugin = plugin;
         item_blacklist = plugin.getConfig().getStringList("blacklist");
 
-        for(String s : item_blacklist) { // debug
-            System.out.println(s);
-        }
-
         createMaterialList();
     }
 

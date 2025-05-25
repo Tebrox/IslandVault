@@ -26,7 +26,7 @@ public class SettingsCommand implements SubCommand {
 
     @Override
     public String getSyntax() {
-        return Commands.MAIN_COMMAND + " settings";
+        return Commands.MAIN_COMMAND.getLabel() + " settings";
     }
 
     @Override

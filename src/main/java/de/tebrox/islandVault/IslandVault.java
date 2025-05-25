@@ -2,13 +2,15 @@ package de.tebrox.islandVault;
 
 import de.tebrox.islandVault.Commands.VaultMainCommand;
 import de.tebrox.islandVault.Enums.Permissions;
+import de.tebrox.islandVault.Listeners.OPJoinListener;
 import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
 import de.tebrox.islandVault.Manager.ItemManager;
 import de.tebrox.islandVault.Listeners.InventoryCloseListener;
-import de.tebrox.islandVault.Listeners.JoinLeaveListener;
+import de.tebrox.islandVault.Listeners.PlayerEventListener;
 import de.tebrox.islandVault.Manager.VaultManager;
 import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import me.kodysimpson.simpapi.menu.MenuManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -18,7 +20,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
-import java.util.logging.Level;
+import java.util.Formatter;
+import java.util.logging.*;
 
 public final class IslandVault extends JavaPlugin {
 
@@ -29,9 +32,11 @@ public final class IslandVault extends JavaPlugin {
     private static HashMap<String, List<String>> permissionGroups = new HashMap<>();
     private static List<String> itemLore = new ArrayList<>();
     private static MainCommand mainCommand;
+    private Logger logger;
 
     @Override
     public void onEnable() {
+        setupLogger();
         plugin = this;
 
         if(!plugin.getDataFolder().exists()) {
@@ -92,6 +97,30 @@ public final class IslandVault extends JavaPlugin {
         return itemLore;
     }
 
+    private void setupLogger() {
+        logger = Logger.getLogger("IslandVault");
+        logger.setUseParentHandlers(false);
+
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setFormatter(new java.util.logging.Formatter() {
+            @Override
+            public String format(LogRecord record) {
+                String prefix = "[IslandVault] ";
+                if(record.getLevel() != Level.INFO) {
+                    prefix += record.getLevel() + ": ";
+                }
+
+                return prefix + record.getMessage() + "\n";
+            }
+        });
+
+        for (Handler h : logger.getHandlers()) {
+            logger.removeHandler(h);
+        }
+        logger.addHandler(handler);
+        logger.setLevel(Level.ALL);
+    }
+
     private void registerPermissions(PluginManager manager) {
         ConfigurationSection section = config.getConfigurationSection(Permissions.GROUPS_CONFIG.getLabel());
 
@@ -100,7 +129,7 @@ public final class IslandVault extends JavaPlugin {
             if(!permissionGroups.containsKey(groupLabel)) {
                 List<String> permissions = getConfig().getStringList(Permissions.GROUPS_CONFIG.getLabel() + "." + groupLabel);
                 permissionGroups.put(groupLabel, permissions);
-                getLogger().log(Level.INFO, "Loaded group: " + groupLabel + " with entries: " + permissions.toString());
+                getVaultLogger().log(Level.INFO, "Loaded group: " + groupLabel + " with entries " + permissions.toString());
             }
         }
 
@@ -114,11 +143,16 @@ public final class IslandVault extends JavaPlugin {
         mainCommand = new VaultMainCommand();
         mainCommand.registerMainCommand(this, "insellager");
 
-        getServer().getPluginManager().registerEvents(new JoinLeaveListener(), this);
+        getServer().getPluginManager().registerEvents(new OPJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerEventListener(), this);
         getServer().getPluginManager().registerEvents(new InventoryCloseListener(), this);
     }
 
     public static MainCommand getMainCommand() {
         return mainCommand;
+    }
+
+    public Logger getVaultLogger() {
+        return logger;
     }
 }

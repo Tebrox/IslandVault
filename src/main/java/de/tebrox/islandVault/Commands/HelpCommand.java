@@ -24,7 +24,7 @@ public class HelpCommand implements SubCommand {
 
     @Override
     public String getSyntax() {
-        return Commands.MAIN_COMMAND + " help";
+        return Commands.MAIN_COMMAND.getLabel() + " help";
     }
 
     @Override
@@ -44,7 +44,7 @@ public class HelpCommand implements SubCommand {
         for (SubCommand subCommand : IslandVault.getMainCommand().getSubCommands())
         {
             if (sender.hasPermission(subCommand.getPermission()))
-                sender.sendMessage(subCommand.getSyntax() + " - " + subCommand.getDescription() + " (" + subCommand.getPermission() + ")");
+                sender.sendMessage(subCommand.getSyntax() + " - " + subCommand.getDescription());
         }
     }
 }

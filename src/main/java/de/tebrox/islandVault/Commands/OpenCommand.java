@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.Commands;
 
 import de.tebrox.islandVault.Enums.Commands;
+import de.tebrox.islandVault.Enums.Data;
 import de.tebrox.islandVault.Enums.Messages;
 import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.IslandVault;
@@ -9,7 +10,9 @@ import de.tebrox.islandVault.Menu.VaultMenu;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
+import me.kodysimpson.simpapi.menu.Menu;
 import me.kodysimpson.simpapi.menu.MenuManager;
+import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -34,7 +37,7 @@ public class OpenCommand implements SubCommand {
     @Override
     public String getSyntax()
     {
-        return Commands.MAIN_COMMAND + " open";
+        return Commands.MAIN_COMMAND.getLabel() + " open";
     }
 
     @Override
@@ -57,6 +60,11 @@ public class OpenCommand implements SubCommand {
         }
 
         if(player.hasPermission(Permissions.CAN_OPEN_MENU.getLabel())) {
+            try {
+                PlayerMenuUtility playerMenuUtility = MenuManager.getPlayerMenuUtility(player);
+            } catch (MenuManagerNotSetupException e) {
+                throw new RuntimeException(e);
+            }
             try {
                 MenuManager.openMenu(VaultMenu.class, player);
             } catch (MenuManagerException e) {

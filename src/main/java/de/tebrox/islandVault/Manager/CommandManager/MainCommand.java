@@ -26,7 +26,7 @@ public abstract class MainCommand implements TabExecutor {
         /* Send sender a help if he doesn't use any subCommand and has permission for the help subCommand */
         if (args.length == 0)
         {
-            SubCommand helpSC = getHelpSubCommand();
+            SubCommand helpSC = getOpenSubCommand();
 
             if (helpSC != null && sender.hasPermission(helpSC.getPermission()))
             {

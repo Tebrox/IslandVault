@@ -1,4 +1,4 @@
-package de.tebrox.islandVault.utils;
+package de.tebrox.islandVault.Utils;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;

@@ -1,12 +1,13 @@
 package de.tebrox.islandVault;
 
-import de.tebrox.islandVault.commands.OpenCommand;
-import de.tebrox.islandVault.enums.Permissions;
-import de.tebrox.islandVault.items.ItemManager;
-import de.tebrox.islandVault.listeners.InventoryCloseListener;
-import de.tebrox.islandVault.listeners.JoinLeaveListener;
-import de.tebrox.islandVault.manager.VaultManager;
-import de.tebrox.islandVault.utils.PlayerVaultUtils;
+import de.tebrox.islandVault.Commands.VaultMainCommand;
+import de.tebrox.islandVault.Enums.Permissions;
+import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
+import de.tebrox.islandVault.Manager.ItemManager;
+import de.tebrox.islandVault.Listeners.InventoryCloseListener;
+import de.tebrox.islandVault.Listeners.JoinLeaveListener;
+import de.tebrox.islandVault.Manager.VaultManager;
+import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import me.kodysimpson.simpapi.menu.MenuManager;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -27,6 +28,7 @@ public final class IslandVault extends JavaPlugin {
     FileConfiguration config = getConfig();
     private static HashMap<String, List<String>> permissionGroups = new HashMap<>();
     private static List<String> itemLore = new ArrayList<>();
+    private static MainCommand mainCommand;
 
     @Override
     public void onEnable() {
@@ -44,28 +46,10 @@ public final class IslandVault extends JavaPlugin {
         itemManager = new ItemManager(this);
         vaultManager = new VaultManager(this);
 
-        this.getCommand("insellager").setExecutor(new OpenCommand());
+        registerCommandsAndEvents();
 
         PluginManager manager = getServer().getPluginManager();
-
-        ConfigurationSection section = config.getConfigurationSection(Permissions.GROUPS_CONFIG.getLabel());
-
-        for(String groupLabel : section.getKeys(false)) {
-            manager.addPermission(new Permission(Permissions.GROUPS.getLabel() + groupLabel));
-            if(!permissionGroups.containsKey(groupLabel)) {
-                List<String> permissions = getConfig().getStringList(Permissions.GROUPS_CONFIG.getLabel() + "." + groupLabel);
-                permissionGroups.put(groupLabel, permissions);
-                getLogger().log(Level.INFO, "Loaded group: " + groupLabel + " with entries: " + permissions.toString());
-            }
-        }
-
-        for(Material material : itemManager.getMaterialList()) {
-            manager.addPermission(new Permission(Permissions.VAULT.getLabel() + material.toString().toLowerCase()));
-        }
-        manager.addPermission(new Permission(Permissions.CAN_OPEN_MENU.getLabel()));
-
-        getServer().getPluginManager().registerEvents(new JoinLeaveListener(), this);
-        getServer().getPluginManager().registerEvents(new InventoryCloseListener(), this);
+        registerPermissions(manager);
 
         for(Player player : getServer().getOnlinePlayers()) {
             if(!IslandVault.getVaultManager().getVaults().containsKey(player.getUniqueId())) {
@@ -79,12 +63,10 @@ public final class IslandVault extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if(getVaultManager().getVaults().size() > 0) {
+        if(!getVaultManager().getVaults().isEmpty()) {
             for(Map.Entry<UUID, PlayerVaultUtils> entry : getVaultManager().getVaults().entrySet()) {
-                UUID uuid = entry.getKey();
-                PlayerVaultUtils playerVaultUtils = entry.getValue();
-                IslandVault.getVaultManager().saveVault(playerVaultUtils);
-                IslandVault.getVaultManager().getVaults().remove(uuid);
+                IslandVault.getVaultManager().saveVault(entry.getValue());
+                IslandVault.getVaultManager().getVaults().remove(entry.getKey());
             }
         }
 
@@ -108,5 +90,35 @@ public final class IslandVault extends JavaPlugin {
 
     public static List<String> getItemLore() {
         return itemLore;
+    }
+
+    private void registerPermissions(PluginManager manager) {
+        ConfigurationSection section = config.getConfigurationSection(Permissions.GROUPS_CONFIG.getLabel());
+
+        for(String groupLabel : section.getKeys(false)) {
+            manager.addPermission(new Permission(Permissions.GROUPS.getLabel() + groupLabel));
+            if(!permissionGroups.containsKey(groupLabel)) {
+                List<String> permissions = getConfig().getStringList(Permissions.GROUPS_CONFIG.getLabel() + "." + groupLabel);
+                permissionGroups.put(groupLabel, permissions);
+                getLogger().log(Level.INFO, "Loaded group: " + groupLabel + " with entries: " + permissions.toString());
+            }
+        }
+
+        for(Material material : itemManager.getMaterialList()) {
+            manager.addPermission(new Permission(Permissions.VAULT.getLabel() + material.toString().toLowerCase()));
+        }
+        manager.addPermission(new Permission(Permissions.CAN_OPEN_MENU.getLabel()));
+    }
+
+    private void registerCommandsAndEvents() {
+        mainCommand = new VaultMainCommand();
+        mainCommand.registerMainCommand(this, "insellager");
+
+        getServer().getPluginManager().registerEvents(new JoinLeaveListener(), this);
+        getServer().getPluginManager().registerEvents(new InventoryCloseListener(), this);
+    }
+
+    public static MainCommand getMainCommand() {
+        return mainCommand;
     }
 }

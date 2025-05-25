@@ -1,7 +1,7 @@
-package de.tebrox.islandVault.listeners;
+package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.utils.PlayerVaultUtils;
+import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

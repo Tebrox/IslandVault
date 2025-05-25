@@ -1,7 +1,8 @@
-package de.tebrox.islandVault.enums;
+package de.tebrox.islandVault.Enums;
 
 public enum Permissions {
 
+    COMMAND("islandvault.cmd."),
     VAULT("islandvault.vault."),
     GROUPS("islandvault.groups."),
     CAN_OPEN_MENU("islandvault.canVaultOpen"),

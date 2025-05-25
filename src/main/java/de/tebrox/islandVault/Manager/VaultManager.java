@@ -1,9 +1,8 @@
-package de.tebrox.islandVault.manager;
+package de.tebrox.islandVault.Manager;
 
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.enums.Permissions;
-import de.tebrox.islandVault.utils.PlayerVaultUtils;
-import me.kodysimpson.simpapi.colors.ColorTranslator;
+import de.tebrox.islandVault.Enums.Permissions;
+import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -12,12 +11,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.permissions.Permission;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
 
 public class VaultManager {
     public HashMap<UUID, PlayerVaultUtils> vaults = new HashMap<>();
@@ -70,6 +67,8 @@ public class VaultManager {
             }
             FileConfiguration data = YamlConfiguration.loadConfiguration(dataFile);
             ConfigurationSection section = data.getConfigurationSection("Inventory");
+
+            if(section == null) return;
 
             for(String material : section.getKeys(false)) {
                 Material mat = Material.getMaterial(material);

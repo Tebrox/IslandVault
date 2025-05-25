@@ -1,4 +1,4 @@
-package de.tebrox.islandVault.items;
+package de.tebrox.islandVault.Manager;
 
 import de.tebrox.islandVault.IslandVault;
 import org.bukkit.Material;

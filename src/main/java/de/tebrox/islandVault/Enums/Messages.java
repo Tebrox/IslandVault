@@ -1,4 +1,4 @@
-package de.tebrox.islandVault.enums;
+package de.tebrox.islandVault.Enums;
 
 public enum Messages {
     MENU_TITLE("messages.menuTitle"),

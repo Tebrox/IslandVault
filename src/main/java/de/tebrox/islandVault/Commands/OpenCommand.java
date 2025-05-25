@@ -1,28 +1,59 @@
-package de.tebrox.islandVault.commands;
+package de.tebrox.islandVault.Commands;
 
+import de.tebrox.islandVault.Enums.Commands;
+import de.tebrox.islandVault.Enums.Messages;
+import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.enums.Messages;
-import de.tebrox.islandVault.enums.Permissions;
-import de.tebrox.islandVault.menu.VaultMenu;
+import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
+import de.tebrox.islandVault.Menu.VaultMenu;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.MenuManager;
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
-public class OpenCommand implements CommandExecutor {
+import java.util.List;
+
+public class OpenCommand implements SubCommand {
+
 
     @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] strings) {
+    public String getName()
+    {
+        return "open";
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return "Opens the islandvault gui";
+    }
+
+    @Override
+    public String getSyntax()
+    {
+        return Commands.MAIN_COMMAND + " open";
+    }
+
+    @Override
+    public String getPermission()
+    {
+        return Permissions.COMMAND.getLabel() + getName() + "GUI";
+    }
+
+    @Override
+    public List<String> getTabCompletion(int index, String[] args) {
+        return null;
+    }
+
+    @Override
+    public void perform(CommandSender commandSender, String[] args) {
         if (!(commandSender instanceof Player player)) {
             String message = IslandVault.getPlugin().getConfig().getString(Messages.NO_PLAYER.getLabel());
             commandSender.sendMessage(message);
-            return true;
+            return;
         }
 
         if(player.hasPermission(Permissions.CAN_OPEN_MENU.getLabel())) {
@@ -36,8 +67,5 @@ public class OpenCommand implements CommandExecutor {
         }else{
             player.sendMessage(ColorTranslator.translateColorCodes(IslandVault.getPlugin().getConfig().getString(Messages.NO_PERMISSION.getLabel())));
         }
-
-
-        return true;
     }
 }

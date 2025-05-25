@@ -1,7 +1,7 @@
-package de.tebrox.islandVault.menu;
+package de.tebrox.islandVault.Menu;
 
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.enums.Messages;
+import de.tebrox.islandVault.Enums.Messages;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;

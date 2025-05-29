@@ -75,7 +75,7 @@ permission_groups:
 ```
 
 Spieler mit der Permission `islandvaults.groups.vip` können diese Items lagern.  
-Zusätzlich benötigen sie `islandvault.canvaultopen` zum Öffnen.
+Zusätzlich benötigen sie `islandvault.command.openGUI` zum Öffnen.
 
 ## GUI Steuerung
 

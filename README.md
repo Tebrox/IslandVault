@@ -26,10 +26,10 @@ _Nur Spieler mit der Permission `islandvault.canvaultopen` können das Lager öf
 
 *   `islandvault.command.openGUI`  
     Erlaubt das Öffnen der Insellager-GUI. Ohne diese Permission kann der Spieler das Lager nicht benutzen.
-*   `islandvaults.vault.<Material>`  
+*   `islandvault.vault.<Material>`  
     Erlaubt das Lagern und Entnehmen eines bestimmten Materials (z. B. `islandvaults.vault.DIAMOND`).  
     Der Platzhalter `<Material>` entspricht dem Materialnamen in Großbuchstaben (Minecraft-Materialnamen).
-*   `islandvaults.groups.<Gruppenname>`  
+*   `islandvault.groups.<Gruppenname>`  
     Erlaubt das Lagern und Entnehmen aller Items, die in einer vordefinierten Gruppe zusammengefasst sind.  
     Diese Gruppen sind in der `config.yml` unter `permission_groups` definiert, z.B. eine Gruppe `vip` mit bestimmten Items. So müssen nicht alle Items einzeln als Permission vergeben werden, was vor allem bei Rängen praktisch ist.
 *   `islandvault.collectradius.<Radius>` Der Radius für das automatische Sammeln bei dem die Spieler die gedroppten Items automatisch in ihr Insellager erhalten, sofern das Item freigeschaltet ist. Ist in der `config.yml` unter `auto-collect-radius` definiert.
@@ -74,7 +74,7 @@ permission_groups:
   vip: [REDSTONE, IRON_INGOT, DIAMOND]
 ```
 
-Spieler mit der Permission `islandvaults.groups.vip` können diese Items lagern.  
+Spieler mit der Permission `islandvault.groups.vip` können diese Items lagern.  
 Zusätzlich benötigen sie `islandvault.command.openGUI` zum Öffnen.
 
 ## GUI Steuerung

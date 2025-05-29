@@ -32,10 +32,15 @@ _Nur Spieler mit der Permission `islandvault.canvaultopen` können das Lager öf
 *   `islandvaults.groups.<Gruppenname>`  
     Erlaubt das Lagern und Entnehmen aller Items, die in einer vordefinierten Gruppe zusammengefasst sind.  
     Diese Gruppen sind in der `config.yml` unter `permission_groups` definiert, z.B. eine Gruppe `vip` mit bestimmten Items. So müssen nicht alle Items einzeln als Permission vergeben werden, was vor allem bei Rängen praktisch ist.
-
+*   `islandvault.collectradius.<Radius>` Der Radius für das automatische Sammeln bei dem die Spieler die gedroppten Items automatisch in ihr Insellager erhalten, sofern das Item freigeschaltet ist. Ist in der `config.yml` unter `auto-collect-radius` definiert.
 ## config.yml erklärt
 
 ```
+auto-collect-radius:
+- 5
+- 10
+- 20
+
 blacklist: [spawn_egg, head]
 
 permission_groups:
@@ -57,6 +62,7 @@ messages:
   close: "§4Schließen"
 ```
 
+**auto-collect-radius:** Der per Permission einstellbare Radius für das automatische Sammeln ins Insellager.\
 **blacklist:** Items, die niemals eingelagert werden können (z.B. Spawn-Eier, Köpfe).  
 **permission\_groups:** Gruppen mit mehreren Items, die per eine einzige Permission freigeschaltet werden können (z.B. Ränge).  
 **messages:** Texte für GUI und Feedback, z.B. Tooltips für Items. Farbcodes sind nutzbar.

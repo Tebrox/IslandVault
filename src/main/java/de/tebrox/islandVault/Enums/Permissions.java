@@ -2,10 +2,10 @@ package de.tebrox.islandVault.Enums;
 
 public enum Permissions {
 
-    COMMAND("islandvault.cmd."),
+    COMMAND("islandvault.command."),
     VAULT("islandvault.vault."),
     GROUPS("islandvault.groups."),
-    CAN_OPEN_MENU("islandvault.canVaultOpen"),
+    COLLECT_RADIUS("islandvault.collectradius."),
 
     GROUPS_CONFIG("permission_groups"),
     MESSAGE_ITEMLORE("messages.itemLore");

@@ -1,10 +1,14 @@
 name: IslandVault
-version: '1.0.1'
+version: '1.1.0'
 main: de.tebrox.islandVault.IslandVault
 api-version: '1.21'
 load: STARTUP
 authors: [ Tebrox ]
 description: Ein virtuelles Insellager für den OneBlock - New Life Minecraft Server
+
+depend:
+  - LuckPerms
+  - BentoBox
 
 commands:
   insellager:

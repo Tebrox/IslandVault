@@ -6,7 +6,7 @@
 
     <groupId>de.tebrox</groupId>
     <artifactId>IslandVault</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>IslandVault</name>
@@ -70,7 +70,15 @@
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
-            </repository>
+        </repository>
+        <repository>
+            <id>codemc-repo</id>
+            <url>https://repo.codemc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
+            <id>luckperms</id>
+            <url>https://repo.lucko.me/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -84,6 +92,24 @@
             <groupId>com.github.KodySimpson</groupId>
             <artifactId>SimpAPI</artifactId>
             <version>4.6.1</version>
+        </dependency>
+        <dependency>
+            <groupId>world.bentobox</groupId>
+            <artifactId>bentobox</artifactId>
+            <version>2.7.0</version> <!-- gleiche Version wie BentoBox -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>world.bentobox</groupId>
+            <artifactId>aoneblock</artifactId>
+            <version>1.17.0</version> <!-- Aktuellste Version -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.luckperms</groupId>
+            <artifactId>api</artifactId>
+            <version>5.5</version> <!-- oder die aktuelle Version -->
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

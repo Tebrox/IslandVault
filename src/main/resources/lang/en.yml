@@ -1,0 +1,29 @@
+noPlayer: "&cCan only use by players!"
+noPermission: "&cYou have not the permission to use this!"
+notOnIsland: "&cYou are not on an OneBlock island!"
+notTeamMember: "&cYou are not an Teammember of this island!"
+collectItemSuccessfull: "&6%item% &ahas been added &6%amount% &atimes to your islandvault."
+islandNotFound: "&cIsland not found!"
+noRadiusPermission: "&cThe island owner does not have radius permission."
+radiusActionbarTimer: "&eThe radius will be displayed for another &c%secondsLeft% seconds."
+
+
+menu:
+  title: "Your Islandvault"
+  firstPage: "&aFirst page"
+  previousPage: "&aPrevious page"
+  nextPage: "&aNext page"
+  lastPage: "&aLast page"
+  close: "&4Close"
+  showRadius: "&6Show autocollect radius for 5 seconds"
+  item:
+    vaultItem:
+      itemLore:
+        - "&9Amount: &f%amount:0%"
+        - ""
+        - "&eLeftclick: &b%maxstacksize:64%x"
+        - "&eRightclick: &b1x"
+        - "&eShiftclick: &fItem to inventory"
+    radius:
+      itemLore:
+        - "&eCurrent radius: %radius:0%"

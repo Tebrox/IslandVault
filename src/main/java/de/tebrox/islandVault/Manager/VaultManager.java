@@ -2,7 +2,12 @@ package de.tebrox.islandVault.Manager;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Enums.Permissions;
+import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import de.tebrox.islandVault.Utils.PlayerVaultUtils;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -27,18 +32,18 @@ public class VaultManager {
 
     /**
      * Loads the vault from the file
-     * @param player
+     * @param ownerUUID
      */
-    public void loadVault(Player player) {
+    public void loadVault(UUID ownerUUID) {
         File folder = new File(plugin.getDataFolder() + File.separator + "vaults");
 
         if(!folder.exists()) {
             folder.mkdirs();
         }
 
-        if(!vaults.containsKey(player.getUniqueId())) {
+        if(!vaults.containsKey(ownerUUID)) {
 
-            File dataFile = new File(plugin.getDataFolder() + File.separator + "vaults" + File.separator + player.getUniqueId() + ".yml");
+            File dataFile = new File(plugin.getDataFolder() + File.separator + "vaults" + File.separator + ownerUUID + ".yml");
             HashMap<Material, Integer> vaultItemList = new HashMap<>();
 
             if(!dataFile.exists()) {
@@ -49,7 +54,7 @@ public class VaultManager {
                     throw new RuntimeException(e);
                 }
                 FileConfiguration data = YamlConfiguration.loadConfiguration(dataFile);
-                data.set("Player.name", player.getName());
+                data.set("Player.name", Bukkit.getOfflinePlayer(ownerUUID).getName());
                 for(Material material : IslandVault.getItemManager().getMaterialList()) {
                     data.set("Inventory." + material, 0);
                     vaultItemList.put(material, 0);
@@ -60,8 +65,8 @@ public class VaultManager {
                     throw new RuntimeException(e);
                 }
 
-                PlayerVaultUtils utils = new PlayerVaultUtils(player, vaultItemList);
-                vaults.put(player.getUniqueId(), utils);
+                PlayerVaultUtils utils = new PlayerVaultUtils(ownerUUID, vaultItemList);
+                vaults.put(ownerUUID, utils);
 
                 return;
             }
@@ -78,8 +83,8 @@ public class VaultManager {
                 }
             }
 
-            PlayerVaultUtils utils = new PlayerVaultUtils(player, vaultItemList);
-            vaults.put(player.getUniqueId(), utils);
+            PlayerVaultUtils utils = new PlayerVaultUtils(ownerUUID, vaultItemList);
+            vaults.put(ownerUUID, utils);
         }
     }
 
@@ -94,10 +99,10 @@ public class VaultManager {
             folder.mkdirs();
         }
 
-        File dataFile = new File(plugin.getDataFolder() + File.separator + "vaults" + File.separator + playerVaultUtils.getPlayer().getUniqueId() + ".yml");
+        File dataFile = new File(plugin.getDataFolder() + File.separator + "vaults" + File.separator + playerVaultUtils.getOwnerUUID() + ".yml");
 
         FileConfiguration data = YamlConfiguration.loadConfiguration(dataFile);
-        data.set("Player.name", playerVaultUtils.getPlayer().getName());
+        data.set("Player.name", Bukkit.getOfflinePlayer(playerVaultUtils.getOwnerUUID()).getName());
 
         for(Map.Entry<Material, Integer> entry : playerVaultUtils.getInventory().entrySet()) {
             Material material = entry.getKey();
@@ -120,20 +125,18 @@ public class VaultManager {
      * @param uuid the players uuid
      * @return List of itemstacks
      */
-    public List<ItemStack> getPlayerVaultItems(UUID uuid) {
-
-        if(!getVaults().containsKey(uuid)) {
-            return null;
+    public List<ItemStack> getPlayerVaultItems(Player player, UUID ownerUUID) {
+        if(!getVaults().containsKey(ownerUUID)) {
+            return new ArrayList<>();
         }
 
-        PlayerVaultUtils playerVaultUtils = getVaults().get(uuid);
-        Player player = playerVaultUtils.getPlayer();
+        PlayerVaultUtils playerVaultUtils = getVaults().get(ownerUUID);
 
         List<Material> materialList = IslandVault.getItemManager().getMaterialList();
         HashMap<String, List<String>> permissionGroups = IslandVault.getPermissionGroups();
 
         for(Map.Entry<String, List<String>> entry : permissionGroups.entrySet()) {
-            if(player.hasPermission(Permissions.GROUPS.getLabel() + entry.getKey())) {
+            if(LuckPermsUtils.hasPermissionForGroup(ownerUUID, entry.getKey())) {
                 for(String materialString : entry.getValue()) {
                     Material material = Material.getMaterial(materialString);
                     if(material != null) {
@@ -144,7 +147,7 @@ public class VaultManager {
         }
 
         for(Material material : materialList) {
-            if(!playerVaultUtils.getUnlockedMaterial().contains(material) && player.hasPermission(Permissions.VAULT.getLabel() + material.toString().toLowerCase())) {
+            if(!playerVaultUtils.getUnlockedMaterial().contains(material) && LuckPermsUtils.hasPermissionForItem(ownerUUID, material)) {
                 playerVaultUtils.addUnlockedMaterial(material);
             }
         }
@@ -157,7 +160,7 @@ public class VaultManager {
             Material material = entry.getKey();
             int amount = entry.getValue();
             if(unlockedMaterials.contains(material)) {
-                items.add(getItemStack(material, amount));
+                items.add(getItemStack(player, material, amount, player.isOp()));
             }
         }
 
@@ -168,9 +171,9 @@ public class VaultManager {
         return vaults;
     }
 
-    public boolean addItemToVault(Material material, int amount, Player player) {
-        if(getVaults().containsKey(player.getUniqueId())) {
-            PlayerVaultUtils playerVaultUtils = getVaults().get(player.getUniqueId());
+    public boolean addItemToVault(Material material, int amount, UUID ownerUUID) {
+        if(getVaults().containsKey(ownerUUID)) {
+            PlayerVaultUtils playerVaultUtils = getVaults().get(ownerUUID);
 
             if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
                 playerVaultUtils.getInventory().compute(material, (k, oldAmount) -> oldAmount + amount);
@@ -202,22 +205,24 @@ public class VaultManager {
         return null;
     }
 
-    public ItemStack getItemStack(Material material, int amount) {
-
+    public ItemStack getItemStack(Player player, Material material, int amount, boolean playerIsOp) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
-        List<String> lore = new ArrayList<>();
 
-        for(String loreString : plugin.getItemLore()) {
-            loreString = loreString.replaceAll("%amount%", String.valueOf(amount));
-            loreString = loreString.replaceAll("%maxstacksize%", String.valueOf(material.getMaxStackSize()));
+        meta.setLore(IslandVault.getLanguageManager().translateList(player, "menu.item.vaultItem.itemLore", Map.of("amount", String.valueOf(amount), "maxStackSize", String.valueOf(material.getMaxStackSize()))));
+
+        if(playerIsOp) {
+            List<String> lore = meta.getLore();
+            String loreString = "&9Material: &f" + material;
+            lore.add("");
             lore.add(ChatColor.translateAlternateColorCodes('&', loreString));
+            meta.setLore(lore);
         }
-
-        meta.setLore(lore);
 
         item.setItemMeta(meta);
 
         return item;
     }
+
+
 }

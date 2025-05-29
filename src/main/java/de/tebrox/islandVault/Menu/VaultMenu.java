@@ -1,33 +1,54 @@
 package de.tebrox.islandVault.Menu;
 
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.Enums.Messages;
+import de.tebrox.islandVault.Utils.IslandUtils;
+import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.PaginatedMenu;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.Nullable;
+import world.bentobox.bentobox.BentoBox;
+import world.bentobox.bentobox.api.addons.Addon;
+import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static de.tebrox.islandVault.Utils.IslandUtils.showRadiusParticles;
+
 public class VaultMenu extends PaginatedMenu {
-    protected ItemStack FILLER_GLASS = makeItem(Material.BLACK_STAINED_GLASS_PANE, "", true);
+    protected ItemStack FILLER_GLASS = makeItem(Material.BLACK_STAINED_GLASS_PANE, "", true, false);
+    private Player player;
 
     public VaultMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
         maxItemsPerPage = 45;
+        player = playerMenuUtility.getOwner();
     }
 
     @Override
     public List<ItemStack> dataToItems() {
-        List<ItemStack> vaultItems = IslandVault.getVaultManager().getPlayerVaultItems(playerMenuUtility.getOwner().getUniqueId());
+
+        UUID ownerUUID = IslandUtils.getIslandOwnerUUID(playerMenuUtility.getOwner());
+        if(ownerUUID == null) {
+            List<ItemStack> temp = new ArrayList<>();
+            for(int i = 0; i < maxItemsPerPage; i++) {
+                temp.add(FILLER_GLASS);
+            }
+            return temp;
+        }
+
+        List<ItemStack> vaultItems = IslandVault.getVaultManager().getPlayerVaultItems(playerMenuUtility.getOwner(), ownerUUID);
         Collections.sort(vaultItems, Comparator.comparing(ItemStack::getType));
 
         int size = vaultItems.size();
@@ -49,7 +70,7 @@ public class VaultMenu extends PaginatedMenu {
 
     @Override
     public String getMenuName() {
-        return IslandVault.getPlugin().getConfig().getString(Messages.MENU_TITLE.getLabel());
+        return IslandVault.getLanguageManager().translate(player, "menu.title");
     }
 
     @Override
@@ -65,19 +86,22 @@ public class VaultMenu extends PaginatedMenu {
     @Override
     public void handleMenu(InventoryClickEvent inventoryClickEvent) throws MenuManagerNotSetupException, MenuManagerException {
         if(inventoryClickEvent.getWhoClicked() instanceof Player player) {
+            Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
+            if(island == null) return;
+
             if(inventoryClickEvent.getClickedInventory() == player.getInventory()) {
                 int slot = inventoryClickEvent.getSlot();
                 ItemStack item = inventoryClickEvent.getCurrentItem();
                 if(inventoryClickEvent.isShiftClick()) {
                     inventoryClickEvent.setCancelled(true);
                     if(inventoryClickEvent.isLeftClick()) {
-                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), item.getAmount(), player)) {
+                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), item.getAmount(), island.getOwner())) {
                             invalidateCache();
                             reloadItems();
                             player.getInventory().setItem(slot, null);
                         }
                     }else if(inventoryClickEvent.isRightClick()) {
-                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), 1, player)) {
+                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), 1, island.getOwner())) {
                             invalidateCache();
                             reloadItems();
                             ItemStack tempItem = new ItemStack(item.getType(), item.getAmount() - 1);
@@ -96,6 +120,13 @@ public class VaultMenu extends PaginatedMenu {
                 if(slot >= 45 && slot <= 54) {
                     inventoryClickEvent.setCancelled(true);
                     switch (slot) {
+                        case 45:
+                            if(inventoryClickEvent.getCurrentItem() != FILLER_GLASS) {
+                                player.closeInventory();
+                                player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+                                IslandUtils.showRadiusParticles(player, player.getLocation(), 5);
+                            }
+                            break;
                         case 47:
                             if(inventoryClickEvent.getCurrentItem() != FILLER_GLASS) {
                                 firstPage();
@@ -168,7 +199,7 @@ public class VaultMenu extends PaginatedMenu {
                         Material material = cursor.getType();
                         int amount = cursor.getAmount();
 
-                        if (IslandVault.getVaultManager().addItemToVault(material, amount, player)) {
+                        if (IslandVault.getVaultManager().addItemToVault(material, amount, island.getOwner())) {
                             invalidateCache();
                             reloadItems();
                             player.setItemOnCursor(null);
@@ -187,13 +218,18 @@ public class VaultMenu extends PaginatedMenu {
      * @param lore        The lore of the ItemStack, with the Strings being automatically color coded with ColorTranslator
      * @return The constructed ItemStack object
      */
-    public ItemStack makeItem(Material material, String displayName, boolean hideTooltip, String... lore) {
+    public ItemStack makeItem(Material material, String displayName, boolean hideTooltip, boolean isEnchanted, String... lore) {
 
         ItemStack item = new ItemStack(material);
         ItemMeta itemMeta = item.getItemMeta();
         assert itemMeta != null;
         itemMeta.setDisplayName(displayName);
         itemMeta.setHideTooltip(hideTooltip);
+
+        if(isEnchanted) {
+            itemMeta.addEnchant(Enchantment.UNBREAKING, 1, true);
+            itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
 
         //Automatically translate color codes provided
         itemMeta.setLore(Arrays.stream(lore).map(ColorTranslator::translateColorCodes).collect(Collectors.toList()));
@@ -204,11 +240,16 @@ public class VaultMenu extends PaginatedMenu {
 
     @Override
     protected void addMenuBorder() {
+        int maxRadius = LuckPermsUtils.getMaxRadiusFromPermissions(IslandUtils.getIslandOwnerUUID(playerMenuUtility.getOwner()));
+        if(maxRadius > 0) {
+            inventory.setItem(45, makeItem(Material.MAP, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.showRadius")), false, false, IslandVault.getLanguageManager().translateList(player, "menu.item.radius.itemLore", Map.of("radius", String.valueOf(maxRadius))).toArray(new String[0])));
+        }
+
         if(getCurrentPage() > 1) {
             // First page button
-            inventory.setItem(47, makeItem(Material.WRITTEN_BOOK, ColorTranslator.translateColorCodes(IslandVault.getPlugin().getConfig().getString("messages.firstPage")), false));
+            inventory.setItem(47, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.firstPage")), false, true));
             // Previous page button
-            inventory.setItem(48, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getPlugin().getConfig().getString("messages.previousPage")), false));
+            inventory.setItem(48, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.previousPage")), false, false));
         }else{
             inventory.setItem(47, FILLER_GLASS);
             inventory.setItem(48, FILLER_GLASS);
@@ -216,16 +257,16 @@ public class VaultMenu extends PaginatedMenu {
 
         if(getCurrentPage() < getTotalPages()) {
             // Next page button
-            inventory.setItem(50, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getPlugin().getConfig().getString("messages.nextPage")), false));
+            inventory.setItem(50, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.nextPage")), false, false));
             // Last page button
-            inventory.setItem(51, makeItem(Material.WRITTEN_BOOK, ColorTranslator.translateColorCodes(IslandVault.getPlugin().getConfig().getString("messages.lastPage")), false));
+            inventory.setItem(51, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.lastPage")), false, true));
         }else{
             inventory.setItem(50, FILLER_GLASS);
             inventory.setItem(51, FILLER_GLASS);
         }
 
         // Close button
-        inventory.setItem(49, makeItem(Material.BARRIER, ColorTranslator.translateColorCodes(IslandVault.getPlugin().getConfig().getString("messages.close")), false));
+        inventory.setItem(49, makeItem(Material.BARRIER, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.close")), false, false));
 
         for (int i = 45; i < 54; i++) {
             if (inventory.getItem(i) == null) {

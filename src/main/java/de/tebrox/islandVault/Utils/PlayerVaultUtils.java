@@ -7,24 +7,25 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class PlayerVaultUtils {
 
-    private Player player;
+    private UUID ownerUUID;
     private HashMap<Material, Integer> inventory;
     private List<Material> unlockedMaterial = new ArrayList<>();
 
-    public PlayerVaultUtils(Player player, HashMap<Material, Integer> inventory) {
-        this.player = player;
+    public PlayerVaultUtils(UUID ownerUUID, HashMap<Material, Integer> inventory) {
         this.inventory = inventory;
-    }
-
-    public Player getPlayer() {
-        return player;
+        this.ownerUUID = ownerUUID;
     }
 
     public HashMap<Material, Integer> getInventory() {
         return inventory;
+    }
+
+    public UUID getOwnerUUID() {
+        return ownerUUID;
     }
 
     public void addUnlockedMaterial(Material material) {

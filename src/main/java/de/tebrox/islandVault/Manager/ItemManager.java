@@ -11,10 +11,26 @@ public class ItemManager {
 
     private final List<Material> materialList = new ArrayList<>();
     private List<String> item_blacklist;
+    private List<String> internalBlacklist;
 
     public ItemManager(IslandVault plugin) {
         this.plugin = plugin;
         item_blacklist = plugin.getConfig().getStringList("blacklist");
+
+        internalBlacklist = new ArrayList<>();
+        internalBlacklist.add("shovel");
+        internalBlacklist.add("sword");
+        internalBlacklist.add("axe");
+        internalBlacklist.add("hoe");
+        internalBlacklist.add("helmet");
+        internalBlacklist.add("chestplate");
+        internalBlacklist.add("leggings");
+        internalBlacklist.add("boots");
+        internalBlacklist.add("bundle");
+        internalBlacklist.add("rod");
+        internalBlacklist.add("bow");
+        internalBlacklist.add("shulker");
+
 
         createMaterialList();
     }
@@ -26,7 +42,7 @@ public class ItemManager {
     private void createMaterialList() {
         Material[] materials = Material.values();
         for(Material mat : materials) {
-            if(!mat.isAir() && !materialIsBlacklisted(mat) && mat.isItem()) {
+            if(!mat.isAir() && !materialIsBlacklisted(mat) && !materialIsInternalBlacklisted(mat) && mat.isItem()) {
                 materialList.add(mat);
             }
         }
@@ -34,6 +50,15 @@ public class ItemManager {
 
     public boolean materialIsBlacklisted(Material material) {
         for(String b : getItemBlacklist()) {
+            if(material.toString().toLowerCase().contains(b.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean materialIsInternalBlacklisted(Material material) {
+        for(String b : internalBlacklist) {
             if(material.toString().toLowerCase().contains(b.toLowerCase())) {
                 return true;
             }

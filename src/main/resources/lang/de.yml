@@ -1,0 +1,28 @@
+noPlayer: "&cNur von Spielern ausführbar!"
+noPermission: "&cDu hast keine Berechtigung, dies zu benutzen!"
+notOnIsland: "&cDu befindest dich nicht auf einer OneBlock-Insel!"
+notTeamMember: "&cDu bist kein Teammitglied dieser Insel!"
+collectItemSuccessfull: "&6%item% &awurde &6%amount% &a× deinem Insellager eingelagert."
+islandNotFound: "&cInsel nicht gefunden!"
+noRadiusPermission: "&cDer Inselbesitzer hat keine Radius-Berechtigung."
+radiusActionbarTimer: "&eDer Einsaugradius wird noch &c%secondsLeft% Sekunden &eangezeigt."
+
+menu:
+  title: "Dein Insellager"
+  firstPage: "&aErste Seite"
+  previousPage: "&aVorherige Seite"
+  nextPage: "&aNächste Seite"
+  lastPage: "&aLetzte Seite"
+  close: "&4Schließen"
+  showRadius: "&6Einsaugradius für 5 Sekunden anzeigen"
+  item:
+    vaultItem:
+      itemLore:
+        - "&Menge: &f%amount:0%"
+        - ""
+        - "&eLinksklick: &b%maxstacksize:64%x"
+        - "&eRechtsklick: &b1x"
+        - "&eShiftklick: &fItem ins Inventar"
+    radius:
+      itemLore:
+        - "&eAktueller Radius: %radius:0%"

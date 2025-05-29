@@ -24,7 +24,7 @@ _Nur Spieler mit der Permission `islandvault.canvaultopen` können das Lager öf
 
 ## Permissions im Detail
 
-*   `islandvault.canvaultopen`  
+*   `islandvault.command.openGUI`  
     Erlaubt das Öffnen der Insellager-GUI. Ohne diese Permission kann der Spieler das Lager nicht benutzen.
 *   `islandvaults.vault.<Material>`  
     Erlaubt das Lagern und Entnehmen eines bestimmten Materials (z. B. `islandvaults.vault.DIAMOND`).  

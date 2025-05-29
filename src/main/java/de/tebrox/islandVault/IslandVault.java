@@ -86,22 +86,20 @@ public final class IslandVault extends JavaPlugin {
 
         loadAutoCollectPermissions(manager);
 
-        for(Player player : getServer().getOnlinePlayers()) {
-            System.out.println("Player: " + player.getName());
-            System.out.println(player.getLocation());
-            Island island = IslandUtils.getIslandManager().getIsland(player.getWorld(), player.getUniqueId());
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for(Player player : getServer().getOnlinePlayers()) {
+                    Island island = IslandUtils.getIslandManager().getIsland(player.getWorld(), player.getUniqueId());
 
+                    if(island != null) {
+                        UUID ownerUUID = island.getOwner();
 
-            if(island == null) System.out.println("Island is null");
-
-            if(island != null) {
-                System.out.println("IslandOwner: " + Bukkit.getOfflinePlayer(island.getOwner()));
-                UUID ownerUUID = island.getOwner();
-
-                IslandVault.getVaultManager().loadVault(ownerUUID);
+                        IslandVault.getVaultManager().loadVault(ownerUUID);
+                    }
+                }
             }
-        }
-
+        }.runTaskLater(this, 40L);
     }
 
     @Override

@@ -7,9 +7,15 @@ islandNotFound: "&cIsland not found!"
 noRadiusPermission: "&cThe island owner does not have radius permission."
 radiusActionbarTimer: "&eThe radius will be displayed for another &c%secondsLeft% seconds."
 
+state:
+  active: "Active"
+  inactive: "Inactive"
+  enable: "Enable"
+  disable: "Disable"
 
 menu:
   title: "Your Islandvault"
+  titleAdmin: "Islandvault from %owner%"
   firstPage: "&aFirst page"
   previousPage: "&aPrevious page"
   nextPage: "&aNext page"
@@ -25,5 +31,9 @@ menu:
         - "&eRightclick: &b1x"
         - "&eShiftclick: &fItem to inventory"
     radius:
+      displayName: "Autocollect"
       itemLore:
         - "&eCurrent radius: %radius:0%"
+        - "&eState: &b%state%"
+        - "&eLeftclick: &b%booleanState% autocollect"
+        - "&eRightclick: &bShow radius for 5 seconds"

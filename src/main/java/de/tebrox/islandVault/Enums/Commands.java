@@ -1,7 +1,8 @@
 package de.tebrox.islandVault.Enums;
 
 public enum Commands {
-    MAIN_COMMAND("/islandvault");
+    MAIN_COMMAND("/insellager"),
+    MAIN_ADMIN_COMMAND("/insellageradmin");
 
     private final String label;
 

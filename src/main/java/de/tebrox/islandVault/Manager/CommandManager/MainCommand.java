@@ -13,10 +13,12 @@ public abstract class MainCommand implements TabExecutor {
     protected final Set<SubCommand> subCommands = new HashSet<>();
     protected final String noPermMessage;
     protected final ArgumentMatcher argumentMatcher;
+    protected final String mainSubcommand;
 
-    public MainCommand(String noPermMessage, ArgumentMatcher argumentMatcher) {
+    public MainCommand(String noPermMessage, ArgumentMatcher argumentMatcher, String mainSubcommand) {
         this.noPermMessage = noPermMessage;
         this.argumentMatcher = argumentMatcher;
+        this.mainSubcommand = mainSubcommand;
 
         registerSubCommands();
     }
@@ -26,18 +28,18 @@ public abstract class MainCommand implements TabExecutor {
         /* Send sender a help if he doesn't use any subCommand and has permission for the help subCommand */
         if (args.length == 0)
         {
-            SubCommand helpSC = getOpenSubCommand();
+            SubCommand mainSC = getMainSubCommand(mainSubcommand);
 
-            if (helpSC != null && sender.hasPermission(helpSC.getPermission()))
+            if (mainSC != null && sender.hasPermission(mainSC.getPermission()))
             {
-                helpSC.perform(sender, args);
+                mainSC.perform(sender, args);
                 return true;
             }
             return false;
         }
 
         /* Gets the subcommand by the name in first argument. Or help, if the subCommand doesn't exist. */
-        SubCommand subCommand = subCommands.stream().filter(sc -> sc.getName().equalsIgnoreCase(args[0])).findAny().orElse(getOpenSubCommand());
+        SubCommand subCommand = subCommands.stream().filter(sc -> sc.getName().equalsIgnoreCase(args[0])).findAny().orElse(getMainSubCommand(mainSubcommand));
 
         if (subCommand == null)
             return false;
@@ -61,7 +63,14 @@ public abstract class MainCommand implements TabExecutor {
         /* If it's the first argument, that means that a subCommands need to be tab completed. */
         if (args.length == 1)
         {
-            List<String> subCommandsTC = subCommands.stream().filter(sc -> sender.hasPermission(sc.getPermission())).map(SubCommand::getName).collect(Collectors.toList());
+            List<String> subCommandsTC = subCommands.stream()
+                    .filter(sc -> sc.getPermission() == null
+                            || sc.getPermission().trim().isEmpty()
+                            || sender.hasPermission(sc.getPermission()))
+                    .map(SubCommand::getName)
+                    .collect(Collectors.toList());
+
+            //List<String> subCommandsTC = subCommands.stream().filter(sc -> sender.hasPermission(sc.getPermission())).map(SubCommand::getName).collect(Collectors.toList());
             return getMatchingStrings(subCommandsTC, args[args.length - 1], argumentMatcher);
         }
 
@@ -123,10 +132,10 @@ public abstract class MainCommand implements TabExecutor {
      * Returns the help subcommand from subCommands set. By default returns subCommand named "help".
      * @return the help subCommand.
      */
-    protected SubCommand getOpenSubCommand()
+    protected SubCommand getMainSubCommand(String cmd)
     {
         /* Return subCommand named "help". */
-        return subCommands.stream().filter(sc -> sc.getName().equalsIgnoreCase("open")).findAny().orElse(null);
+        return subCommands.stream().filter(sc -> sc.getName().equalsIgnoreCase(cmd)).findAny().orElse(null);
     }
 
     /**

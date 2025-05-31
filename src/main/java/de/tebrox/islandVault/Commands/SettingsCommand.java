@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Commands;
 
 import de.tebrox.islandVault.Enums.Commands;
 import de.tebrox.islandVault.Enums.Messages;
+import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
 import de.tebrox.islandVault.Menu.SettingsMenu;
@@ -10,6 +11,7 @@ import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.MenuManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.PermissionDefault;
 
 import java.util.List;
 
@@ -31,7 +33,12 @@ public class SettingsCommand implements SubCommand {
 
     @Override
     public String getPermission() {
-        return "";
+        return Permissions.USE_SEARCH.getLabel();
+    }
+
+    @Override
+    public PermissionDefault getPermissionDefault() {
+        return null;
     }
 
     @Override

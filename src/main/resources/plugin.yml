@@ -15,3 +15,10 @@ commands:
     desciption: Open the player island vault
     usage: /insellager - Öffnet dein Insellager
     aliases: [lager]
+    permission: islandvault.command.openGUI
+
+  insellageradmin:
+    description: adminmenu for the island vault
+    usage: /insellageradmin
+    aliases: [lageradmin]
+    permission: islandvault.command.admin

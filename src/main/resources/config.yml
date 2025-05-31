@@ -5,5 +5,7 @@ auto-collect-radius:
   -
 blacklist: [spawn_egg, head, moving_piston]
 
+debug: false
+
 permission_groups:
   test: [REDSTONE_TORCH, REDSTONE_BLOCK, REDSTONE]

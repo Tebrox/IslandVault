@@ -20,7 +20,7 @@
 | `/insellager` | Öffnet die GUI des Insellagers | `islandvault.command.openGUI` |
 | `/lager` | Alias für `/insellager`        | `islandvault.command.openGUI`    |
 
-_Nur Spieler mit der Permission `islandvault.canvaultopen` können das Lager öffnen._
+_Nur Spieler mit der Permission `islandvault.openGUI` können das Lager öffnen._
 
 ## Permissions im Detail
 

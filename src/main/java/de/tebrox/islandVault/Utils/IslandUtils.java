@@ -20,21 +20,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class IslandUtils {
-    private static boolean bentoBoxAvailable = false;
+    //private static boolean bentoBoxAvailable = false;
     private static final Map<UUID, BukkitRunnable> activeTimers = new HashMap<>();
 
-    public static void setBentoBoxAvailable(boolean available) {
-        bentoBoxAvailable = available;
-    }
-
     public static IslandsManager getIslandManager() {
-        if (!bentoBoxAvailable) return null;
         return BentoBox.getInstance().getIslands();
     }
 
     public static UUID getIslandOwnerUUID(Player player) {
-        if(!bentoBoxAvailable) return null;
-
         IslandsManager manager = getIslandManager();
         if(manager == null) return null;
 
@@ -49,8 +42,6 @@ public class IslandUtils {
     }
 
     public static boolean isOnOwnIsland(Player player) {
-        if (!bentoBoxAvailable) return false;
-
         IslandsManager manager = getIslandManager();
         if (manager == null) return false;
 
@@ -67,8 +58,6 @@ public class IslandUtils {
     }
 
     public static boolean isOnIslandWhereOwner(Player player) {
-        if (!bentoBoxAvailable) return false;
-
         IslandsManager manager = getIslandManager();
 
         Optional<Island> islandOptional = manager.getIslandAt(player.getLocation());
@@ -82,8 +71,6 @@ public class IslandUtils {
     }
 
     public static boolean isOnIslandWhereMember(Player player) {
-        if (!bentoBoxAvailable) return false;
-
         IslandsManager manager = getIslandManager();
 
         Optional<Island> islandOptional = manager.getIslandAt(player.getLocation());
@@ -94,10 +81,6 @@ public class IslandUtils {
         }
 
         return false;
-    }
-
-    public static boolean isBentoBoxEnabled() {
-        return bentoBoxAvailable;
     }
 
     public static void showRadiusParticles(Player viewer, Location center, int seconds) {

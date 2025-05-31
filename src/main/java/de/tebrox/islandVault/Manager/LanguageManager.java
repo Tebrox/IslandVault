@@ -1,9 +1,11 @@
 package de.tebrox.islandVault.Manager;
 
+import de.tebrox.islandVault.IslandVault;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -86,9 +88,12 @@ public class LanguageManager {
         }
     }
 
-    public void reloadLanguages() {
+    public void reloadLanguages(CommandSender sender) {
         loadLanguages();
-        Bukkit.getLogger().info("[IslandVault] Sprachdateien neu geladen.");
+        IslandVault.getPlugin().getLogger().info("Sprachdateien neu geladen.");
+        if(sender != null) {
+            sender.sendMessage("Sprachdateien neu geladen.");
+        }
     }
 
     private String getPlayerLanguageKey(Player player) {
@@ -103,13 +108,14 @@ public class LanguageManager {
     public String translate(Player player, String key, Map<String, String> placeholders) {
         String lang = getPlayerLanguageKey(player);
         YamlConfiguration config = languages.getOrDefault(lang, languages.get(fallbackLanguage));
-        if (config == null) return key;
+        if (config == null) {
+            return key;
+        }
 
         String value = config.getString(key);
         if (value == null) {
             value = languages.get(fallbackLanguage).getString(key, key);
         }
-
         return ChatColor.translateAlternateColorCodes('&', applyPlaceholders(value,placeholders));
     }
 

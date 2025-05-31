@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.Manager.CommandManager;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.permissions.PermissionDefault;
 
 import java.util.List;
 
@@ -28,6 +29,12 @@ public interface SubCommand {
      * @return The permission.
      */
     String getPermission ();
+
+    /**
+     * Return the default value from the permission
+     * @return defaultValue
+     */
+    PermissionDefault getPermissionDefault ();
 
     /**
      * Returns the list of words to tab-complete on an index starting after the subCommand. (ex. /troll swap 0 1 | numbers representing the index of tabComplete)

@@ -1,9 +1,6 @@
 package de.tebrox.islandVault.Listeners;
 
-import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.Manager.VaultManager;
-import de.tebrox.islandVault.Utils.IslandUtils;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import org.bukkit.*;
 import org.bukkit.entity.Item;
@@ -15,7 +12,6 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 
@@ -38,8 +34,6 @@ public class ItemAutoCollectListener implements Listener {
 
     @EventHandler
     public void onItemSpawn(ItemSpawnEvent event) {
-        if (!IslandUtils.isBentoBoxEnabled()) return;
-
         Item item = event.getEntity();
         PersistentDataContainer data = item.getPersistentDataContainer();
 
@@ -61,6 +55,10 @@ public class ItemAutoCollectListener implements Listener {
 
         UUID ownerUUID = island.getOwner();
         if (ownerUUID == null) return;
+
+        if(!IslandVault.getVaultManager().autoCollectIsEnabled(ownerUUID)) {
+            return;
+        }
 
         int radius = LuckPermsUtils.getMaxRadiusFromPermissions(ownerUUID);
         if (radius <= 0) return;
@@ -90,11 +88,11 @@ public class ItemAutoCollectListener implements Listener {
             if (baseStack.getAmount() >= baseStack.getMaxStackSize()) break;
         }
 
-        IslandVault.getVaultManager().addItemToVault(baseStack.getType(), baseStack.getAmount(), ownerUUID);
+        IslandVault.getVaultManager().addItemToVault(baseStack.getType(), baseStack.getAmount(), ownerUUID, null);
         Player owner = Bukkit.getPlayer(island.getOwner());
 
         if(owner != null) {
-            owner.sendMessage(ChatColor.GREEN + "[IslandVault] " + plugin.getLanguageManager().translate(owner, "collectItemSuccessfull", Map.of("item", baseStack.getI18NDisplayName(), "amount", String.valueOf(baseStack.getAmount()))));
+            //owner.sendMessage(ChatColor.GREEN + "[IslandVault] " + plugin.getLanguageManager().translate(owner, "collectItemSuccessfull", Map.of("item", baseStack.getI18NDisplayName(), "amount", String.valueOf(baseStack.getAmount()))));
         }
 
         item.remove();

@@ -1,30 +1,27 @@
 package de.tebrox.islandVault;
 
+import de.tebrox.islandVault.Commands.AdminCommand.VaultAdminMainCommand;
 import de.tebrox.islandVault.Commands.VaultMainCommand;
 import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Listeners.*;
 import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
 import de.tebrox.islandVault.Manager.ItemManager;
 import de.tebrox.islandVault.Manager.LanguageManager;
+import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Manager.VaultManager;
-import de.tebrox.islandVault.Utils.IslandUtils;
-import de.tebrox.islandVault.Utils.PlayerVaultUtils;
-import de.tebrox.islandVault.Utils.PluginDependencyChecker;
-import me.kodysimpson.simpapi.menu.MenuManager;
-import org.bukkit.Bukkit;
+import de.tebrox.islandVault.Utils.*;
 import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.permissions.Permission;
-import org.bukkit.plugin.PluginManager;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
+import world.bentobox.bentobox.managers.IslandsManager;
 
-import javax.swing.plaf.basic.BasicButtonUI;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -38,13 +35,17 @@ public final class IslandVault extends JavaPlugin {
     FileConfiguration config = getConfig();
     private static HashMap<String, List<String>> permissionGroups = new HashMap<>();
     private static MainCommand mainCommand;
+    private static MainCommand adminMainCommand;
     private Logger logger;
+    private Logger debugLogger;
     private Map<String, Integer> radiusPermissionMap = new HashMap<>();
     private static LanguageManager languageManager;
+    private boolean debug;
 
     @Override
     public void onEnable() {
         setupLogger();
+        setupDebugLogger();
         plugin = this;
 
         if(!plugin.getDataFolder().exists()) {
@@ -69,29 +70,31 @@ public final class IslandVault extends JavaPlugin {
         saveDefaultConfig();
 
         updateConfig();
-
-        languageManager = new LanguageManager(this);
+        reloadPluginConfig(null);
 
         MenuManager.setup(getServer(), this);
+
+        languageManager = new LanguageManager(this);
 
         itemManager = new ItemManager(this);
         vaultManager = new VaultManager(this);
 
-        IslandUtils.setBentoBoxAvailable(getServer().getPluginManager().getPlugin("BentoBox") instanceof BentoBox);
-
         registerCommandsAndEvents();
 
-        PluginManager manager = getServer().getPluginManager();
-        registerPermissions(manager);
+        registerPermissions();
 
-        loadAutoCollectPermissions(manager);
+        loadAutoCollectPermissions();
 
         new BukkitRunnable() {
             @Override
             public void run() {
                 for(Player player : getServer().getOnlinePlayers()) {
-                    Island island = IslandUtils.getIslandManager().getIsland(player.getWorld(), player.getUniqueId());
+                    IslandsManager islandsManager = IslandUtils.getIslandManager();
+                    if(islandsManager == null) {
+                        debugLogger.warning("Cannot load onlineplayer islands. Islandmanager is null!");
+                    }
 
+                    Island island = islandsManager.getIsland(player.getWorld(), player.getUniqueId());
                     if(island != null) {
                         UUID ownerUUID = island.getOwner();
 
@@ -107,7 +110,6 @@ public final class IslandVault extends JavaPlugin {
         if(!getVaultManager().getVaults().isEmpty()) {
             for(Map.Entry<UUID, PlayerVaultUtils> entry : getVaultManager().getVaults().entrySet()) {
                 IslandVault.getVaultManager().saveVault(entry.getValue());
-                System.out.println("Saving vault");
             }
             getVaultManager().getVaults().clear();
         }
@@ -158,35 +160,79 @@ public final class IslandVault extends JavaPlugin {
         logger.setLevel(Level.ALL);
     }
 
-    private void registerPermissions(PluginManager manager) {
+    private void setupDebugLogger() {
+
+        debugLogger = Logger.getLogger("IslandVaultDebug");
+        debugLogger.setUseParentHandlers(false);
+
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setFormatter(new java.util.logging.Formatter() {
+            private final String RESET = "\u001B[0m";
+            private final String GREEN = "\u001B[32m";
+
+            @Override
+            public String format(LogRecord record) {
+                if(!isDebug()) return null;
+
+                String prefix = GREEN + "[IslandVault Debug] " + RESET;
+                if(record.getLevel() != Level.INFO) {
+                    prefix += record.getLevel() + ": ";
+                }
+
+                return prefix + record.getMessage() + "\n";
+            }
+        });
+
+        for (Handler h : logger.getHandlers()) {
+            debugLogger.removeHandler(h);
+        }
+        if(!isDebug()) return;
+        debugLogger.addHandler(handler);
+        debugLogger.setLevel(Level.ALL);
+    }
+
+    private void registerPermissions() {
         ConfigurationSection section = config.getConfigurationSection(Permissions.GROUPS_CONFIG.getLabel());
 
         for(String groupLabel : section.getKeys(false)) {
-            manager.addPermission(new Permission(Permissions.GROUPS.getLabel() + groupLabel));
-            if(!permissionGroups.containsKey(groupLabel)) {
-                List<String> permissions = getConfig().getStringList(Permissions.GROUPS_CONFIG.getLabel() + "." + groupLabel);
-                permissionGroups.put(groupLabel, permissions);
-                getVaultLogger().log(Level.INFO, "Loaded group: " + groupLabel + " with entries " + permissions.toString());
+            String permission = Permissions.GROUPS.getLabel() + groupLabel;
+            if(PermissionUtils.registerPermission(permission, "Itemgroup " + groupLabel, PermissionDefault.FALSE)) {
+                if(!permissionGroups.containsKey(groupLabel)) {
+                    List<String> permissions = getConfig().getStringList(Permissions.GROUPS_CONFIG.getLabel() + "." + groupLabel);
+                    permissionGroups.put(groupLabel, permissions);
+                    getVaultLogger().log(Level.INFO, "Loaded group: " + groupLabel + " with entries " + permissions.toString());
+                }
             }
+
         }
 
         for(Material material : itemManager.getMaterialList()) {
-            manager.addPermission(new Permission(Permissions.VAULT.getLabel() + material.toString().toLowerCase()));
+            String permission = Permissions.VAULT.getLabel() + material.toString().toLowerCase();
+            if(PermissionUtils.registerPermission(permission, "Vault item " + material.toString(), PermissionDefault.FALSE)) {
+                debugLogger.info("Registered vault item: " + material.toString());
+            }else{
+                debugLogger.warning("Cannot register vault item: " + material.toString());
+            }
         }
-        manager.addPermission(new Permission(Permissions.COMMAND.getLabel() + "openGUI"));
     }
 
     private void registerCommandsAndEvents() {
         mainCommand = new VaultMainCommand();
         mainCommand.registerMainCommand(this, "insellager");
 
+        adminMainCommand = new VaultAdminMainCommand();
+        adminMainCommand.registerMainCommand(this, "insellageradmin");
+
+        AdminVaultLogger adminVaultLogger = new AdminVaultLogger(this);
+
         getServer().getPluginManager().registerEvents(new OPJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new InventoryCloseListener(), this);
         getServer().getPluginManager().registerEvents(new ItemAutoCollectListener(this), this);
         getServer().getPluginManager().registerEvents(new IslandListener(), this);
+        getServer().getPluginManager().registerEvents(new VaultEventListener(adminVaultLogger), this);
     }
 
-    public void loadAutoCollectPermissions(PluginManager manager) {
+    public void loadAutoCollectPermissions() {
         radiusPermissionMap.clear();
 
         List<Integer> radii = getConfig().getIntegerList("auto-collect-radius");
@@ -194,7 +240,11 @@ public final class IslandVault extends JavaPlugin {
             int radius = radii.get(i);
             if (radius > 0) {
                 String permission = Permissions.COLLECT_RADIUS.getLabel() + radius;
-                manager.addPermission(new Permission(permission));
+                if(PermissionUtils.registerPermission(permission, "Autocollect radius " + radius, PermissionDefault.FALSE)) {
+                    debugLogger.info("Registered autocolllect radius " + radius);
+                }else{
+                    debugLogger.warning("Cannot register autocollect radius " + radius);
+                }
                 radiusPermissionMap.put(permission, radius);
             }
         }
@@ -219,8 +269,16 @@ public final class IslandVault extends JavaPlugin {
         return mainCommand;
     }
 
+    public static MainCommand getAdminMainCommand() {
+        return adminMainCommand;
+    }
+
     public Logger getVaultLogger() {
         return logger;
+    }
+
+    public Logger getDebugLogger() {
+        return debugLogger;
     }
 
     public Map<String, Integer> getRadiusPermissionMap() {
@@ -229,5 +287,28 @@ public final class IslandVault extends JavaPlugin {
 
     public static LanguageManager getLanguageManager() {
         return languageManager;
+    }
+
+    public void reloadPluginConfig(CommandSender sender) {
+        reloadConfig();
+        debug = getConfig().getBoolean("debug", false);
+        getLogger().info("Config neu geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
+        if(sender != null) {
+            sender.sendMessage("Config neu geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
+        }
+
+    }
+
+    /**
+     * @return debugmode state
+     */
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebugMode(boolean debug) {
+        this.debug = debug;
+        getConfig().set("debug", debug);
+        saveConfig();
     }
 }

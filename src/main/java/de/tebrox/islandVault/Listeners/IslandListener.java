@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.IslandPresenceTracker;
+import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Utils.IslandUtils;
 import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import org.bukkit.Bukkit;
@@ -61,6 +62,8 @@ public class IslandListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
+        MenuManager.addPlayerMenuUtilityMap(player);
+
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {
             if(IslandPresenceTracker.isIslandIsEmpty(island.getUniqueId())) {
@@ -76,6 +79,8 @@ public class IslandListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+
+        MenuManager.removeFromPlayerMenuUtilityMap(player);
 
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {

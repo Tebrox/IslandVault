@@ -1,7 +1,10 @@
 package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Utils.PlayerVaultUtils;
+import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
+import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,6 +19,14 @@ public class InventoryCloseListener implements Listener {
         if(IslandVault.getVaultManager().getVaults().containsKey(player.getUniqueId())){
             PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(player.getUniqueId());
             IslandVault.getVaultManager().saveVault(playerVaultUtils);
+        }
+        try {
+            PlayerMenuUtility playerMenuUtility = MenuManager.getPlayerMenuUtility(player);
+            playerMenuUtility.setData("searchQuery", null);
+            playerMenuUtility.setData("adminOpen", null);
+            MenuManager.getPlayerMenuUtilityMap().put(player.getUniqueId(), playerMenuUtility);
+        } catch (MenuManagerNotSetupException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -7,6 +7,8 @@ islandNotFound: "&cInsel nicht gefunden!"
 noRadiusPermission: "&cDer Inselbesitzer hat keine Radius-Berechtigung."
 radiusActionbarTimer: "&eDer Einsaugradius wird noch &c%secondsLeft% Sekunden &eangezeigt."
 
+
+
 menu:
   title: "Dein Insellager"
   firstPage: "&aErste Seite"

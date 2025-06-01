@@ -1,11 +1,12 @@
 package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.Enums.LoggerAction;
-import de.tebrox.islandVault.Events.ItemAddedToVaultEvent;
-import de.tebrox.islandVault.Events.ItemRemovedFromVaultEvent;
+import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import de.tebrox.islandVault.Utils.AdminVaultLogger;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VaultEventListener implements Listener {
     private final AdminVaultLogger logger;
@@ -15,12 +16,13 @@ public class VaultEventListener implements Listener {
     }
 
     @EventHandler
-    public void onItemAdded(ItemAddedToVaultEvent event) {
-        logger.logAction(LoggerAction.ADD_ITEM, event.getActor(), event.getVaultOwner(), event.getItem());
-    }
-
-    @EventHandler
-    public void onItemRemoved(ItemRemovedFromVaultEvent event) {
-        logger.logAction(LoggerAction.REMOVE_ITEM, event.getActor(), event.getVaultOwner(), event.getItem());
+    public void onVaultUpdate(VaultUpdateEvent event) {
+        LoggerAction loggerAction;
+        if(event.getAmountChange() > 0) {
+            loggerAction = LoggerAction.ADD_ITEM;
+        }else{
+            loggerAction = LoggerAction.REMOVE_ITEM;
+        }
+        logger.logAction(loggerAction, event.getActor(), event.getVaultOwner(), event.getMaterial(), Math.abs(event.getAmountChange()));
     }
 }

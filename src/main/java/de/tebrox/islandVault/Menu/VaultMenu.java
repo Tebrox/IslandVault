@@ -3,15 +3,18 @@ package de.tebrox.islandVault.Menu;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.VaultManager;
 import de.tebrox.islandVault.Utils.IslandUtils;
+import de.tebrox.islandVault.Utils.ItemSortUtil;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
+import de.tebrox.islandVault.Utils.PlayerDataUtils;
+import it.unimi.dsi.fastutil.Pair;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.PaginatedMenu;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -23,22 +26,21 @@ import org.jetbrains.annotations.Nullable;
 import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class VaultMenu extends PaginatedMenu {
     protected ItemStack FILLER_GLASS = makeItem(Material.BLACK_STAINED_GLASS_PANE, "", true, false);
     protected ItemStack NO_ITEMS = makeItem(Material.BARRIER, "You have no items", false, false);
-    private UUID adminOpenOwnerUUID = null;
     private UUID ownerUUID = null;
+
+    private ItemSortUtil.SortOption currentOption;
+    private ItemSortUtil.SortDirection currentDirection;
+    private final List<ItemSortUtil.SortOption> options = Arrays.asList(ItemSortUtil.SortOption.values());
 
     public VaultMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
         maxItemsPerPage = 45;
-
-        if(playerMenuUtility.getData("adminOpen")  != null) {
-            adminOpenOwnerUUID = UUID.fromString(String.valueOf(playerMenuUtility.getData("adminOpen")));
-        }
-
     }
 
     @Override
@@ -50,10 +52,6 @@ public class VaultMenu extends PaginatedMenu {
         }
 
         ownerUUID = IslandUtils.getIslandOwnerUUID(playerMenuUtility.getOwner());;
-        if(adminOpenOwnerUUID != null) {
-            ownerUUID = adminOpenOwnerUUID;
-        }
-
 
         if(ownerUUID == null) {
             List<ItemStack> temp = new ArrayList<>();
@@ -64,9 +62,12 @@ public class VaultMenu extends PaginatedMenu {
             return temp;
         }
 
+        currentOption = PlayerDataUtils.loadSortOption(playerMenuUtility.getOwner());
+        currentDirection = PlayerDataUtils.loadSortDirection(playerMenuUtility.getOwner());
+
         List<ItemStack> vaultItems = IslandVault.getVaultManager().getPlayerVaultItems(playerMenuUtility.getOwner(), ownerUUID);
         List<ItemStack> filteredItems = VaultManager.filterItems(player, vaultItems, searchQuery);
-        filteredItems.sort(Comparator.comparing(ItemStack::getType));
+        ItemSortUtil.sortItems(filteredItems, ownerUUID, player, currentOption, currentDirection);
 
         int size = filteredItems.size();
         int rest = size % maxItemsPerPage;
@@ -86,9 +87,6 @@ public class VaultMenu extends PaginatedMenu {
 
     @Override
     public String getMenuName() {
-        if(adminOpenOwnerUUID != null) {
-            return IslandVault.getLanguageManager().translate(player, "menu.titleAdmin", Map.of("owner", Bukkit.getOfflinePlayer(adminOpenOwnerUUID).getName()));
-        }
         return IslandVault.getLanguageManager().translate(player, "menu.title");
     }
 
@@ -114,13 +112,13 @@ public class VaultMenu extends PaginatedMenu {
                 if(inventoryClickEvent.isShiftClick()) {
                     inventoryClickEvent.setCancelled(true);
                     if(inventoryClickEvent.isLeftClick()) {
-                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), item.getAmount(), adminOpenOwnerUUID != null ? adminOpenOwnerUUID : island.getOwner(), player)) {
+                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), item.getAmount(), island.getOwner(), player)) {
                             invalidateCache();
                             reloadItems();
                             player.getInventory().setItem(slot, null);
                         }
                     }else if(inventoryClickEvent.isRightClick()) {
-                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), 1, adminOpenOwnerUUID != null ? adminOpenOwnerUUID : island.getOwner(), player)) {
+                        if(IslandVault.getVaultManager().addItemToVault(item.getType(), 1, island.getOwner(), player)) {
                             invalidateCache();
                             reloadItems();
                             ItemStack tempItem = new ItemStack(item.getType(), item.getAmount() - 1);
@@ -139,6 +137,21 @@ public class VaultMenu extends PaginatedMenu {
                 if(slot >= 45 && slot <= 54) {
                     inventoryClickEvent.setCancelled(true);
                     switch (slot) {
+                        case 45:
+                            if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
+                                if(inventoryClickEvent.isLeftClick()) {
+                                    int nextIndex = (options.indexOf(currentOption) + 1) % options.size();
+                                    currentOption = options.get(nextIndex);
+                                    PlayerDataUtils.saveSortSettings(playerMenuUtility.getOwner(), currentOption, currentDirection);
+                                }else if(inventoryClickEvent.isRightClick()) {
+                                    currentDirection = (currentDirection == ItemSortUtil.SortDirection.ASCENDING)
+                                            ? ItemSortUtil.SortDirection.DESCENDING
+                                            : ItemSortUtil.SortDirection.ASCENDING;
+                                    PlayerDataUtils.saveSortSettings(playerMenuUtility.getOwner(), currentOption, currentDirection);
+                                }
+                                refreshData();
+                            }
+                            break;
                         case 47:
                             if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
                                 firstPage();
@@ -191,7 +204,7 @@ public class VaultMenu extends PaginatedMenu {
 
                     if(cursor != null && cursor.getType() == item.getType() && !isShiftClick && isRightClick) {
                         int cursorAmount = cursor.getAmount();
-                        ItemStack tempItem = IslandVault.getVaultManager().getItemFromVault(cursor.getType(), 1, adminOpenOwnerUUID != null ? adminOpenOwnerUUID : island.getOwner(), player);
+                        ItemStack tempItem = IslandVault.getVaultManager().getItemFromVault(cursor.getType(), 1, island.getOwner(), player);
                         if(tempItem != null) {
                             ItemStack handItem = new ItemStack(cursor.getType(), cursorAmount + tempItem.getAmount());
                             player.setItemOnCursor(handItem);
@@ -209,7 +222,7 @@ public class VaultMenu extends PaginatedMenu {
                         }else if (isRightClick) {
                             amount = 1;
                         }
-                        handItem = IslandVault.getVaultManager().getItemFromVault(mat, amount, adminOpenOwnerUUID != null ? adminOpenOwnerUUID : island.getOwner(), player);
+                        handItem = IslandVault.getVaultManager().getItemFromVault(mat, amount, island.getOwner(), player);
 
                         if(handItem == null) return;
 
@@ -227,7 +240,7 @@ public class VaultMenu extends PaginatedMenu {
                         Material material = cursor.getType();
                         int amount = cursor.getAmount();
 
-                        if (IslandVault.getVaultManager().addItemToVault(material, amount, adminOpenOwnerUUID != null ? adminOpenOwnerUUID : island.getOwner(), player)) {
+                        if (IslandVault.getVaultManager().addItemToVault(material, amount, island.getOwner(), player)) {
                             invalidateCache();
                             reloadItems();
                             player.setItemOnCursor(null);
@@ -267,8 +280,30 @@ public class VaultMenu extends PaginatedMenu {
         return item;
     }
 
+    public ItemStack makeSortItem(Material material) {
+        currentOption = PlayerDataUtils.loadSortOption(playerMenuUtility.getOwner());
+        currentDirection = PlayerDataUtils.loadSortDirection(playerMenuUtility.getOwner());
+        ItemStack item = new ItemStack(material);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        String label = switch (currentOption) {
+            case ID -> IslandVault.getLanguageManager().translate(playerMenuUtility.getOwner(), "menu.item.sort.options.id");
+            case AMOUNT -> IslandVault.getLanguageManager().translate(playerMenuUtility.getOwner(), "menu.item.sort.options.amount");
+            case LOCALIZED_NAME -> IslandVault.getLanguageManager().translate(playerMenuUtility.getOwner(), "menu.item.sort.options.name");
+        };
+        String arrow = currentDirection == ItemSortUtil.SortDirection.ASCENDING ? "⬆" : "⬇";
+
+        itemMeta.setLore(IslandVault.getLanguageManager().translateList(playerMenuUtility.getOwner(), "menu.item.sort.itemLore"));
+        itemMeta.setDisplayName(ChatColor.YELLOW + label + " " + arrow);
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
+
     @Override
     protected void addMenuBorder() {
+
+        inventory.setItem(45, makeSortItem(Material.COMPASS));
 
         if(getCurrentPage() > 1) {
             // First page button

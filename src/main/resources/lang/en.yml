@@ -37,3 +37,12 @@ menu:
         - "&eState: &b%state%"
         - "&eLeftclick: &b%booleanState% autocollect"
         - "&eRightclick: &bShow radius for 5 seconds"
+    sort:
+      options:
+        id: "📦 Sorted by ID"
+        amount: "🔢 Sorted by amount"
+        name: "🌍 Sorted by name"
+      itemLore:
+        - ""
+        - "&eLeftclick: &bnext option"
+        - "&eRightclick: &bchange direction"

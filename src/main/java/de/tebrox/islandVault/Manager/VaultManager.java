@@ -1,15 +1,11 @@
 package de.tebrox.islandVault.Manager;
 
-import de.tebrox.islandVault.Events.ItemAddedToVaultEvent;
-import de.tebrox.islandVault.Events.ItemRemovedFromVaultEvent;
+import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Utils.ItemNameTranslator;
+import de.tebrox.islandVault.Utils.ItemSortUtil;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import de.tebrox.islandVault.Utils.PlayerVaultUtils;
-import net.luckperms.api.LuckPerms;
-import net.luckperms.api.LuckPermsProvider;
-import net.luckperms.api.model.user.User;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -89,11 +85,6 @@ public class VaultManager {
 
             FileConfiguration data = YamlConfiguration.loadConfiguration(dataFile);
 
-            boolean autocollect = false;
-            if(data.get("Player.Autocollect") != null) {
-                autocollect = data.getBoolean("Player.Autocollect");
-            }
-
             ConfigurationSection section = data.getConfigurationSection("Inventory");
 
             if(section == null) return;
@@ -107,7 +98,11 @@ public class VaultManager {
             }
 
             PlayerVaultUtils utils = new PlayerVaultUtils(ownerUUID, vaultItemList);
-            utils.setAutoCollect(autocollect);
+
+            if(data.get("Player.Autocollect") != null) {
+                utils.setAutoCollect(data.getBoolean("Player.Autocollect"));
+            }
+
             vaults.put(ownerUUID, utils);
         }
     }
@@ -152,10 +147,8 @@ public class VaultManager {
      */
     public List<ItemStack> getPlayerVaultItems(Player player, UUID ownerUUID) {
         if(!getVaults().containsKey(ownerUUID)) {
-            System.out.println("vault not loaded");
             loadVault(ownerUUID);
         }
-        System.out.println("O:" + ownerUUID);
 
         PlayerVaultUtils playerVaultUtils = getVaults().get(ownerUUID);
 
@@ -168,7 +161,6 @@ public class VaultManager {
                     Material material = Material.getMaterial(materialString);
                     if(material != null) {
                         playerVaultUtils.addUnlockedMaterial(material);
-                        System.out.println("A:" + material);
                     }
                 }
             }
@@ -177,7 +169,6 @@ public class VaultManager {
         for(Material material : materialList) {
             if(!playerVaultUtils.getUnlockedMaterial().contains(material) && LuckPermsUtils.hasPermissionForItem(ownerUUID, material)) {
                 playerVaultUtils.addUnlockedMaterial(material);
-                System.out.println("B:" + material);
             }
         }
 
@@ -190,7 +181,6 @@ public class VaultManager {
             int amount = entry.getValue();
             if(unlockedMaterials.contains(material)) {
                 items.add(getItemStack(player, material, amount, player.isOp()));
-                System.out.println("C:" + material);
             }
         }
 
@@ -222,12 +212,13 @@ public class VaultManager {
             PlayerVaultUtils playerVaultUtils = getVaults().get(ownerUUID);
 
             if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
-                playerVaultUtils.getInventory().compute(material, (k, oldAmount) -> oldAmount + amount);
-
-                ItemStack tempItemStack = new ItemStack(material, amount);
-                ItemAddedToVaultEvent event = new ItemAddedToVaultEvent(player, ownerUUID, tempItemStack, false);
+                int current = playerVaultUtils.getInventory().getOrDefault(material, 0);
+                VaultUpdateEvent event = new VaultUpdateEvent(player, ownerUUID, material, amount, false);
                 Bukkit.getPluginManager().callEvent(event);
-                if (event.isCancelled()) return false;
+                if(event.isCancelled()) return false;
+
+                playerVaultUtils.getInventory().put(material, current + amount);
+
                 return true;
             }
         }

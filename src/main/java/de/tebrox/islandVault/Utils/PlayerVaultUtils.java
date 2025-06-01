@@ -1,6 +1,6 @@
 package de.tebrox.islandVault.Utils;
 
-import de.tebrox.islandVault.Events.ItemRemovedFromVaultEvent;
+import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -50,24 +50,16 @@ public class PlayerVaultUtils {
     }
 
     public ItemStack setItem(Material material, int vaultAmount, int getAmount, Player player) {
-        if(vaultAmount >= getAmount) {
+        int toExtract = Math.min(vaultAmount, getAmount); // tatsächliche Entnahmemenge
+        System.out.println(toExtract);
 
-            ItemStack tempItemStack = new ItemStack(material, getAmount);
-            ItemRemovedFromVaultEvent event = new ItemRemovedFromVaultEvent(player, ownerUUID, tempItemStack, false);
-            Bukkit.getPluginManager().callEvent(event);
-            if (event.isCancelled()) return null;
-
-            inventory.put(material, vaultAmount - getAmount);
-
-            return tempItemStack;
-        }
-        ItemStack tempItemStack = new ItemStack(material, vaultAmount);
-        ItemRemovedFromVaultEvent event = new ItemRemovedFromVaultEvent(player, ownerUUID, tempItemStack, false);
+        VaultUpdateEvent event = new VaultUpdateEvent(player, ownerUUID, material, -toExtract, false);
         Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) return null;
+        if(event.isCancelled()) return null;
 
-        inventory.put(material, 0);
-        return tempItemStack;
+        inventory.put(material, vaultAmount - toExtract); // neue Menge speichern
+
+        return new ItemStack(material, toExtract);
     }
 
 }

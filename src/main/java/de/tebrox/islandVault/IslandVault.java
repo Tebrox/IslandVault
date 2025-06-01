@@ -37,7 +37,6 @@ public final class IslandVault extends JavaPlugin {
     private static MainCommand mainCommand;
     private static MainCommand adminMainCommand;
     private Logger logger;
-    private Logger debugLogger;
     private Map<String, Integer> radiusPermissionMap = new HashMap<>();
     private static LanguageManager languageManager;
     private boolean debug;
@@ -45,7 +44,6 @@ public final class IslandVault extends JavaPlugin {
     @Override
     public void onEnable() {
         setupLogger();
-        setupDebugLogger();
         plugin = this;
 
         if(!plugin.getDataFolder().exists()) {
@@ -70,7 +68,6 @@ public final class IslandVault extends JavaPlugin {
         saveDefaultConfig();
 
         updateConfig();
-        reloadPluginConfig(null);
 
         MenuManager.setup(getServer(), this);
 
@@ -78,6 +75,8 @@ public final class IslandVault extends JavaPlugin {
 
         itemManager = new ItemManager(this);
         vaultManager = new VaultManager(this);
+
+        reloadPluginConfig(null);
 
         registerCommandsAndEvents();
 
@@ -91,7 +90,7 @@ public final class IslandVault extends JavaPlugin {
                 for(Player player : getServer().getOnlinePlayers()) {
                     IslandsManager islandsManager = IslandUtils.getIslandManager();
                     if(islandsManager == null) {
-                        debugLogger.warning("Cannot load onlineplayer islands. Islandmanager is null!");
+                        //debugLogger.warning("Cannot load onlineplayer islands. Islandmanager is null!");
                     }
 
                     Island island = islandsManager.getIsland(player.getWorld(), player.getUniqueId());
@@ -160,37 +159,6 @@ public final class IslandVault extends JavaPlugin {
         logger.setLevel(Level.ALL);
     }
 
-    private void setupDebugLogger() {
-
-        debugLogger = Logger.getLogger("IslandVaultDebug");
-        debugLogger.setUseParentHandlers(false);
-
-        ConsoleHandler handler = new ConsoleHandler();
-        handler.setFormatter(new java.util.logging.Formatter() {
-            private final String RESET = "\u001B[0m";
-            private final String GREEN = "\u001B[32m";
-
-            @Override
-            public String format(LogRecord record) {
-                if(!isDebug()) return null;
-
-                String prefix = GREEN + "[IslandVault Debug] " + RESET;
-                if(record.getLevel() != Level.INFO) {
-                    prefix += record.getLevel() + ": ";
-                }
-
-                return prefix + record.getMessage() + "\n";
-            }
-        });
-
-        for (Handler h : logger.getHandlers()) {
-            debugLogger.removeHandler(h);
-        }
-        if(!isDebug()) return;
-        debugLogger.addHandler(handler);
-        debugLogger.setLevel(Level.ALL);
-    }
-
     private void registerPermissions() {
         ConfigurationSection section = config.getConfigurationSection(Permissions.GROUPS_CONFIG.getLabel());
 
@@ -209,9 +177,9 @@ public final class IslandVault extends JavaPlugin {
         for(Material material : itemManager.getMaterialList()) {
             String permission = Permissions.VAULT.getLabel() + material.toString().toLowerCase();
             if(PermissionUtils.registerPermission(permission, "Vault item " + material.toString(), PermissionDefault.FALSE)) {
-                debugLogger.info("Registered vault item: " + material.toString());
+                //debugLogger.info("Registered vault item: " + material.toString());
             }else{
-                debugLogger.warning("Cannot register vault item: " + material.toString());
+                //debugLogger.warning("Cannot register vault item: " + material.toString());
             }
         }
     }
@@ -241,9 +209,9 @@ public final class IslandVault extends JavaPlugin {
             if (radius > 0) {
                 String permission = Permissions.COLLECT_RADIUS.getLabel() + radius;
                 if(PermissionUtils.registerPermission(permission, "Autocollect radius " + radius, PermissionDefault.FALSE)) {
-                    debugLogger.info("Registered autocolllect radius " + radius);
+                    //debugLogger.info("Registered autocolllect radius " + radius);
                 }else{
-                    debugLogger.warning("Cannot register autocollect radius " + radius);
+                    //debugLogger.warning("Cannot register autocollect radius " + radius);
                 }
                 radiusPermissionMap.put(permission, radius);
             }
@@ -277,10 +245,6 @@ public final class IslandVault extends JavaPlugin {
         return logger;
     }
 
-    public Logger getDebugLogger() {
-        return debugLogger;
-    }
-
     public Map<String, Integer> getRadiusPermissionMap() {
         return radiusPermissionMap;
     }
@@ -296,6 +260,7 @@ public final class IslandVault extends JavaPlugin {
         if(sender != null) {
             sender.sendMessage("Config neu geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
         }
+        registerPermissions();
 
     }
 

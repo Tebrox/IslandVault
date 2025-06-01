@@ -1,30 +1,48 @@
-noPlayer: "&cNur von Spielern ausführbar!"
+noPlayer: "&cNur Spieler können diesen Befehl verwenden!"
 noPermission: "&cDu hast keine Berechtigung, dies zu benutzen!"
 notOnIsland: "&cDu befindest dich nicht auf einer OneBlock-Insel!"
 notTeamMember: "&cDu bist kein Teammitglied dieser Insel!"
-collectItemSuccessfull: "&6%item% &awurde &6%amount%× &adeinem Insellager eingelagert."
+collectItemSuccessfull: "&6%item% &awurde &6%amount% &aMal ins Insellager eingelagert."
 islandNotFound: "&cInsel nicht gefunden!"
-noRadiusPermission: "&cDer Inselbesitzer hat keine Radius-Berechtigung."
-radiusActionbarTimer: "&eDer Einsaugradius wird noch &c%secondsLeft% Sekunden &eangezeigt."
+noRadiusPermission: "&cDer Inselbesitzer hat keine Berechtigung für diesen Radius."
+radiusActionbarTimer: "&eDer Radius wird noch &c%secondsLeft% Sekunden &eangezeigt."
 
-
+state:
+  active: "Aktiv"
+  inactive: "Inaktiv"
+  enable: "Aktiviere"
+  disable: "Deaktiviere"
 
 menu:
   title: "Dein Insellager"
+  titleAdmin: "Insellager von %owner%"
   firstPage: "&aErste Seite"
   previousPage: "&aVorherige Seite"
   nextPage: "&aNächste Seite"
   lastPage: "&aLetzte Seite"
   close: "&4Schließen"
-  showRadius: "&6Einsaugradius für 5 Sekunden anzeigen"
+  showRadius: "&Sammelradius für 5 Sekunden anzeigen"
   item:
     vaultItem:
       itemLore:
-        - "&Menge: &f%amount:0%"
+        - "&9Menge: &f%amount:0%"
         - ""
         - "&eLinksklick: &b%maxstacksize:64%x"
         - "&eRechtsklick: &b1x"
-        - "&eShiftklick: &fItem ins Inventar"
+        - "&eShiftklick: &fItem direkt ins Inventar"
     radius:
+      displayName: "Automatisches Einsammeln"
       itemLore:
         - "&eAktueller Radius: %radius:0%"
+        - "&eStatus: &b%state%"
+        - "&eLinksklick: &b%booleanState% einsammeln"
+        - "&eRechtsklick: &bRadius für 5 Sekunden anzeigen"
+    sort:
+      options:
+        id: "📦 Sortiert nach ID"
+        amount: "🔢 Sortiert nach Menge"
+        name: "🌍 Sortiert nach Name"
+      itemLore:
+        - ""
+        - "&eLinksklick: &bNächste Option"
+        - "&eRechtsklick: &bSortierrichtung ändern"

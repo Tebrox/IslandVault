@@ -66,7 +66,6 @@ public class OpenPlayerVaultCommand implements SubCommand {
         }
 
         String owner = args[0];
-        System.out.println(owner);
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner);
 
         if(!offlinePlayer.hasPlayedBefore()) {
@@ -75,7 +74,6 @@ public class OpenPlayerVaultCommand implements SubCommand {
         }
 
         if(!IslandVault.getVaultManager().getVaults().containsKey(offlinePlayer.getUniqueId())) {
-            System.out.println(offlinePlayer.getUniqueId());
             IslandVault.getVaultManager().loadVault(offlinePlayer.getUniqueId());
         }
 

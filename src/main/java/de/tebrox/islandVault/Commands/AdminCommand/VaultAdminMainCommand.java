@@ -20,7 +20,7 @@ public class VaultAdminMainCommand extends MainCommand {
 
     @Override
     protected void registerSubCommands() {
-        subCommands.add(new AdminHelpCommand());
+        //subCommands.add(new AdminHelpCommand());
         subCommands.add(new ReloadConfigCommand());
         subCommands.add(new ReloadLanguageCommand());
         subCommands.add(new SetDebugModeCommand());

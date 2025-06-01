@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Utils;
 
 import de.tebrox.islandVault.Enums.LoggerAction;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -23,7 +24,7 @@ public class AdminVaultLogger {
         logFile = new File(folder, "vault-actions.log");
     }
 
-    public void logAction(LoggerAction action, Player actor, UUID vaultOwner, ItemStack item) {
+    public void logAction(LoggerAction action, Player actor, UUID vaultOwner, Material material, int amount) {
         String ownerName = Bukkit.getOfflinePlayer(vaultOwner).getName();
 
         String a = "";
@@ -41,8 +42,8 @@ public class AdminVaultLogger {
             LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")),
             ownerName != null ? ownerName : vaultOwner.toString(),
             actor.getName(),
-            item.getAmount(),
-            item.getType(),
+            amount,
+            material,
             a
         );
 

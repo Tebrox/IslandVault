@@ -45,7 +45,7 @@ public class ItemAutoCollectListener implements Listener {
         Optional<Island> optIsland = BentoBox.getInstance().getIslands().getIslandAt(itemLocation);
         if (optIsland.isEmpty()) return;
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> tryAutoCollect(item, optIsland.get()), 20L); // 5 Ticks Verzögerung (~0,25 Sek.)
+        Bukkit.getScheduler().runTaskLater(plugin, () -> tryAutoCollect(item, optIsland.get()), 1L); // 5 Ticks Verzögerung (~0,25 Sek.)
     }
 
     private void tryAutoCollect(Item item, Island island) {
@@ -75,7 +75,7 @@ public class ItemAutoCollectListener implements Listener {
                 .filter(e -> e instanceof Item)
                 .map(e -> (Item) e)
                 .filter(i -> i.isValid() && !i.equals(item) && i.getItemStack().isSimilar(baseStack))
-                .collect(Collectors.toList());
+                .toList();
 
         for (Item nearby : nearbyItems) {
             ItemStack nearbyStack = nearby.getItemStack();
@@ -91,8 +91,9 @@ public class ItemAutoCollectListener implements Listener {
         IslandVault.getVaultManager().addItemToVault(baseStack.getType(), baseStack.getAmount(), ownerUUID, null);
         Player owner = Bukkit.getPlayer(island.getOwner());
 
-        if(owner != null) {
-            //owner.sendMessage(ChatColor.GREEN + "[IslandVault] " + plugin.getLanguageManager().translate(owner, "collectItemSuccessfull", Map.of("item", baseStack.getI18NDisplayName(), "amount", String.valueOf(baseStack.getAmount()))));
+        if(IslandVault.getVaultManager().ownerCanSeeAutocollectMessage(ownerUUID)) {
+            //String message = plugin.getLanguageManager().translate();
+            //.sendMessage(ChatColor.GREEN + "[IslandVault] " + plugin.getLanguageManager().translate(owner, "collectItemSuccessfull", Map.of("item", baseStack.getI18NDisplayName(), "amount", String.valueOf(baseStack.getAmount()))));
         }
 
         item.remove();

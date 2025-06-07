@@ -73,7 +73,7 @@ public class ItemSearchCommand implements SubCommand {
                 player.sendMessage(IslandVault.getLanguageManager().translate(player, "notOnIsland"));
                 return;
             }
-            if (IslandUtils.isOnIslandWhereMember(player) || IslandUtils.isOnOwnIsland(player)) {
+            if (IslandUtils.hasAccessToCurrentIsland(player)) {
                 try {
                     MenuManager.getPlayerMenuUtility(player).setData("searchQuery", searchQuery);
                     MenuManager.openMenu(VaultMenu.class, player);

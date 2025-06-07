@@ -20,11 +20,11 @@ public class VaultAdminMainCommand extends MainCommand {
 
     @Override
     protected void registerSubCommands() {
-        //subCommands.add(new AdminHelpCommand());
+        subCommands.add(new AdminHelpCommand());
         subCommands.add(new ReloadConfigCommand());
         subCommands.add(new ReloadLanguageCommand());
         subCommands.add(new SetDebugModeCommand());
-        subCommands.add(new OpenPlayerVaultCommand());
+        //subCommands.add(new OpenPlayerVaultCommand());
 
 
         for(SubCommand cmd : getSubCommands()) {
@@ -33,9 +33,9 @@ public class VaultAdminMainCommand extends MainCommand {
                 permissionDefault = PermissionDefault.FALSE;
             }
             if(PermissionUtils.registerPermission(cmd.getPermission(), cmd.getDescription(), permissionDefault)) {
-                IslandVault.getPlugin().getVaultLogger().log(Level.INFO, "Registered command: " + cmd.getSyntax());
+                IslandVault.getPlugin().getLogger().log(Level.INFO, "Registered command: " + cmd.getSyntax());
             }else{
-                IslandVault.getPlugin().getVaultLogger().warning("Cannot register command: " + cmd.getSyntax());
+                IslandVault.getPlugin().getLogger().warning("Cannot register command: " + cmd.getSyntax());
             }
         }
     }

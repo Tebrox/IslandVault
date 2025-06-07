@@ -80,7 +80,7 @@ public class OpenCommand implements SubCommand {
                 player.sendMessage(IslandVault.getLanguageManager().translate(player, "notOnIsland"));
                 return;
             }
-            if(IslandUtils.isOnIslandWhereMember(player) || IslandUtils.isOnOwnIsland(player)) {
+            if(IslandUtils.hasAccessToCurrentIsland(player)) {
                 try {
                     MenuManager.openMenu(VaultMenu.class, player);
                 } catch (MenuManagerException | MenuManagerNotSetupException e) {

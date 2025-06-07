@@ -1,13 +1,11 @@
 package de.tebrox.islandVault.Manager;
 
 import de.tebrox.islandVault.IslandVault;
-import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -15,16 +13,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class LanguageManager {
-    private final JavaPlugin plugin;
-    private final Map<String, YamlConfiguration> languages = new HashMap<>();
-    private final String fallbackLanguage = "en";
-    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("%([^%:]+)(?::([^%]+))?%");
 
+    private final Plugin plugin;
     private final File langFolder;
+    private final Map<Locale, YamlConfiguration> languages = new HashMap<>();
+    private final Map<UUID, Locale> playerLocales = new HashMap<>();
+    private final Map<UUID, PlaceholderRegistry> playerPlaceholders = new HashMap<>();
 
     public LanguageManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -58,34 +54,81 @@ public class LanguageManager {
     }
 
     public void loadLanguages() {
+        if (!langFolder.exists()) langFolder.mkdirs();
+
         languages.clear();
 
-        if (!langFolder.exists() || !langFolder.isDirectory()) {
-            plugin.getLogger().warning("Der Sprachordner existiert nicht: " + langFolder.getAbsolutePath());
-            return;
-        }
-
-        File[] files = langFolder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml"));
-        if (files == null || files.length == 0) {
-            plugin.getLogger().warning("Keine Sprachdateien im lang-Ordner gefunden: " + langFolder.getAbsolutePath());
-            return;
-        }
+        File[] files = langFolder.listFiles((dir, name) -> name.endsWith(".yml"));
+        if (files == null) return;
 
         for (File file : files) {
-            try {
-                YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-                String langKey = file.getName().replace(".yml", "").toLowerCase(Locale.ROOT);
-                languages.put(langKey, config);
-                plugin.getLogger().info("Sprachdatei geladen: " + file.getName());
-            } catch (Exception e) {
-                plugin.getLogger().warning("Fehler beim Laden der Sprachdatei: " + file.getName());
-                e.printStackTrace();
+            String name = file.getName().replace(".yml", "");
+            Locale locale = Locale.forLanguageTag(name.replace("_", "-"));
+            YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+            languages.put(locale, config);
+        }
+    }
+
+    public void setLocale(Player player, Locale locale) {
+        playerLocales.put(player.getUniqueId(), locale);
+    }
+
+    public Locale getLocale(Player player) {
+        return playerLocales.getOrDefault(player.getUniqueId(), Locale.ENGLISH);
+    }
+
+    public PlaceholderRegistry getPlaceholders(Player player) {
+        return playerPlaceholders.computeIfAbsent(player.getUniqueId(), id -> new PlaceholderRegistry());
+    }
+
+    public String translate(Player player, String path) {
+        return translate(player, path, Map.of(), true);
+    }
+
+    public String translate(Player player, String path, Map<String, String> extraPlaceholders, boolean useGlobal) {
+        Locale locale = getLocale(player);
+        YamlConfiguration config = languages.getOrDefault(locale, languages.get(Locale.ENGLISH));
+        String raw = config.getString(path);
+        if (raw == null) return "§cMissing lang: " + path;
+
+        if (useGlobal) {
+            Map<String, String> global = getPlaceholders(player).getAll();
+            for (var entry : global.entrySet()) {
+                raw = raw.replace("%" + entry.getKey() + "%", entry.getValue());
             }
         }
-
-        if (!languages.containsKey(fallbackLanguage)) {
-            plugin.getLogger().warning("Fallback-Sprache '" + fallbackLanguage + "' nicht gefunden! Bitte en.yml bereitstellen.");
+        for (var entry : extraPlaceholders.entrySet()) {
+            raw = raw.replace("%" + entry.getKey() + "%", entry.getValue());
         }
+        return ChatColor.translateAlternateColorCodes('&', raw);
+    }
+
+    public List<String> translateList(Player player, String path) {
+        return translateList(player, path, Map.of(), true);
+    }
+
+    public List<String> translateList(Player player, String path, Map<String, String> extraPlaceholders, boolean useGlobal) {
+        Locale locale = getLocale(player);
+        YamlConfiguration config = languages.getOrDefault(locale, languages.get(Locale.ENGLISH));
+        List<String> list = config.getStringList(path);
+        if (list.isEmpty()) {
+            String single = config.getString(path);
+            if (single != null) list = List.of(single);
+        }
+        List<String> result = new ArrayList<>();
+        for (String line : list) {
+            if (useGlobal) {
+                Map<String, String> global = getPlaceholders(player).getAll();
+                for (var entry : global.entrySet()) {
+                    line = line.replace("%" + entry.getKey() + "%", entry.getValue());
+                }
+            }
+            for (var entry : extraPlaceholders.entrySet()) {
+                line = line.replace("%" + entry.getKey() + "%", entry.getValue());
+            }
+            result.add(ChatColor.translateAlternateColorCodes('&', line));
+        }
+        return result;
     }
 
     public void reloadLanguages(CommandSender sender) {
@@ -96,74 +139,27 @@ public class LanguageManager {
         }
     }
 
-    private String getPlayerLanguageKey(Player player) {
-        String locale = player.getLocale();
-        return locale.split("_")[0].toLowerCase(Locale.ROOT);
-    }
+    public static class PlaceholderRegistry {
+        private final Map<String, String> placeholders = new HashMap<>();
 
-    public String translate(Player player, String key) {
-        return translate(player, key, Collections.emptyMap());
-    }
-
-    public String translate(Player player, String key, Map<String, String> placeholders) {
-        String lang = getPlayerLanguageKey(player);
-        YamlConfiguration config = languages.getOrDefault(lang, languages.get(fallbackLanguage));
-        if (config == null) {
-            return key;
+        public void set(String key, String value) {
+            placeholders.put(key, value);
         }
 
-        String value = config.getString(key);
-        if (value == null) {
-            value = languages.get(fallbackLanguage).getString(key, key);
-        }
-        return ChatColor.translateAlternateColorCodes('&', applyPlaceholders(value,placeholders));
-    }
-
-    public List<String> translateList(Player player, String key) {
-        return translateList(player, key, Collections.emptyMap());
-    }
-
-    public List<String> translateList(Player player, String key, Map<String, String> placeholders) {
-        String lang = getPlayerLanguageKey(player);
-        YamlConfiguration config = languages.getOrDefault(lang, languages.get(fallbackLanguage));
-        if (config == null) return Collections.singletonList(key);
-
-        List<String> lines = config.getStringList(key);
-        if (lines.isEmpty()) {
-            lines = languages.get(fallbackLanguage).getStringList(key);
-            if (lines.isEmpty()) return Collections.singletonList(key);
+        public void setAll(Map<String, String> values) {
+            placeholders.putAll(values);
         }
 
-        List<String> result = new ArrayList<>();
-        for (String line : lines) {
-            result.add(applyPlaceholders(ChatColor.translateAlternateColorCodes('&', line), placeholders));
-        }
-        return result;
-    }
-
-    private String applyPlaceholders(String input, Map<String, String> placeholders) {
-        if (input == null) return null;
-
-        Matcher matcher = PLACEHOLDER_PATTERN.matcher(input);
-        StringBuffer sb = new StringBuffer();
-
-        while (matcher.find()) {
-            String key = matcher.group(1);
-            String defaultValue = matcher.group(2);
-            String replacement = placeholders.getOrDefault(key, defaultValue != null ? defaultValue : matcher.group(0));
-            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+        public void remove(String key) {
+            placeholders.remove(key);
         }
 
-        matcher.appendTail(sb);
-        return sb.toString();
-    }
+        public Map<String, String> getAll() {
+            return placeholders;
+        }
 
-    public JavaPlugin getPlugin() {
-        return plugin;
-    }
-
-    public Component getLocalizedItemName(Material material) {
-        String translationKey = "item.minecraft." + material.toString().toLowerCase(); // z. B. "item.minecraft.diamond_sword"
-        return Component.translatable(translationKey);
+        public void clear() {
+            placeholders.clear();
+        }
     }
 }

@@ -22,6 +22,7 @@ import java.util.UUID;
 public class IslandUtils {
     //private static boolean bentoBoxAvailable = false;
     private static final Map<UUID, BukkitRunnable> activeTimers = new HashMap<>();
+    private static final int ROLE_TRUSTED = 25;
 
     public static IslandsManager getIslandManager() {
         return BentoBox.getInstance().getIslands();
@@ -57,30 +58,20 @@ public class IslandUtils {
         return false;
     }
 
-    public static boolean isOnIslandWhereOwner(Player player) {
-        IslandsManager manager = getIslandManager();
+    public static boolean hasAccessToIsland(Player player, Island island) {
+        if (island == null) return false;
 
-        Optional<Island> islandOptional = manager.getIslandAt(player.getLocation());
-        if(islandOptional.isPresent()) {
-            Island atLocation = islandOptional.get();
+        UUID uuid = player.getUniqueId();
 
-            return atLocation != null && atLocation.getOwner().equals(player.getUniqueId());
-        }
+        // Zugriff, wenn Spieler OWNER oder mindestens TRUSTED ist
+        if (island.getOwner().equals(uuid)) return true;
 
-        return false;
+        return island.getMemberSet(ROLE_TRUSTED).contains(uuid);
     }
 
-    public static boolean isOnIslandWhereMember(Player player) {
-        IslandsManager manager = getIslandManager();
-
-        Optional<Island> islandOptional = manager.getIslandAt(player.getLocation());
-        if(islandOptional.isPresent()) {
-            Island atLocation = islandOptional.get();
-
-            return atLocation != null && atLocation.getMemberSet().contains(player.getUniqueId());
-        }
-
-        return false;
+    public static boolean hasAccessToCurrentIsland(Player player) {
+        Island island = BentoBox.getInstance().getIslands().getIslandAt(player.getLocation()).orElse(null);
+        return hasAccessToIsland(player, island);
     }
 
     public static void showRadiusParticles(Player viewer, Location center, int seconds) {
@@ -123,7 +114,8 @@ public class IslandUtils {
             @Override
             public void run() {
                 if (ticksPassed >= totalTicks) {
-                    viewer.sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(IslandVault.getLanguageManager().translate(viewer, "radiusActionbarTimer", Map.of("secondsLeft", String.valueOf(0)))));
+                    String message = IslandVault.getLanguageManager().translate(viewer, "radiusActionbarTimer", Map.of("secondsLeft", String.valueOf(0)), false);
+                    viewer.sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
                     this.cancel();
                     activeTimers.remove(viewer.getUniqueId());
                     return;
@@ -160,7 +152,7 @@ public class IslandUtils {
 
                 if (ticksPassed % 20 == 0) {
                     int secondsLeft = (totalTicks - ticksPassed) / 20;
-                    viewer.sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(IslandVault.getLanguageManager().translate(viewer, "radiusActionbarTimer", Map.of("secondsLeft", String.valueOf(secondsLeft)))));
+                    viewer.sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(IslandVault.getLanguageManager().translate(viewer, "radiusActionbarTimer", Map.of("secondsLeft", String.valueOf(secondsLeft)), true)));
                 }
                 ticksPassed += 2;
 

@@ -2,8 +2,10 @@ package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.MenuManager;
+import de.tebrox.islandVault.Menu.VaultMenu;
 import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
+import me.kodysimpson.simpapi.menu.Menu;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -15,6 +17,10 @@ public class InventoryCloseListener implements Listener {
     @EventHandler
     public void onGuiClose(InventoryCloseEvent event) {
         Player player = (Player) event.getPlayer();
+
+        if(event.getInventory().getHolder() instanceof VaultMenu vaultMenu) {
+            IslandVault.getVaultManager().unregisterViewer(player, vaultMenu.getIslandOwner());
+        }
 
         if(IslandVault.getVaultManager().getVaults().containsKey(player.getUniqueId())){
             PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(player.getUniqueId());

@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Manager;
 
 import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Menu.VaultMenu;
 import de.tebrox.islandVault.Utils.ItemNameTranslator;
 import de.tebrox.islandVault.Utils.ItemSortUtil;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
@@ -20,10 +21,12 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class VaultManager {
     public HashMap<UUID, PlayerVaultUtils> vaults = new HashMap<>();
+    private final Map<UUID, Set<VaultMenu>> openMenus = new ConcurrentHashMap<>();
     private final IslandVault plugin;
 
     public VaultManager(IslandVault plugin) {
@@ -67,6 +70,7 @@ public class VaultManager {
                 FileConfiguration data = YamlConfiguration.loadConfiguration(dataFile);
                 data.set("Player.name", Bukkit.getOfflinePlayer(ownerUUID).getName());
                 data.set("Player.Autocollect", false);
+                data.set("Player.ShowAutocollectMessage", false);
                 for(Material material : IslandVault.getItemManager().getMaterialList()) {
                     data.set("Inventory." + material, 0);
                     vaultItemList.put(material, 0);
@@ -103,6 +107,10 @@ public class VaultManager {
                 utils.setAutoCollect(data.getBoolean("Player.Autocollect"));
             }
 
+            if(data.get("Player.ShowAutocollectMessage") != null) {
+                utils.setShowAutocollectMessage(data.getBoolean("Player.ShowAutocollectMessage"));
+            }
+
             vaults.put(ownerUUID, utils);
         }
     }
@@ -122,7 +130,8 @@ public class VaultManager {
 
         FileConfiguration data = YamlConfiguration.loadConfiguration(dataFile);
         data.set("Player.name", Bukkit.getOfflinePlayer(playerVaultUtils.getOwnerUUID()).getName());
-        data.set("Player.autocollect", playerVaultUtils.getAutoCollect());
+        data.set("Player.Autocollect", playerVaultUtils.getAutoCollect());
+        data.set("Player.ShowAutocollectMessage", playerVaultUtils.canSeeAutocollectMessage());
 
         for(Map.Entry<Material, Integer> entry : playerVaultUtils.getInventory().entrySet()) {
             Material material = entry.getKey();
@@ -151,6 +160,8 @@ public class VaultManager {
         }
 
         PlayerVaultUtils playerVaultUtils = getVaults().get(ownerUUID);
+
+
 
         List<Material> materialList = IslandVault.getItemManager().getMaterialList();
         HashMap<String, List<String>> permissionGroups = IslandVault.getPermissionGroups();
@@ -226,8 +237,8 @@ public class VaultManager {
     }
 
     public ItemStack getItemFromVault(Material material, int amount, UUID ownerUUID, Player player) {
-        if(getVaults().containsKey(player.getUniqueId())) {
-            PlayerVaultUtils playerVaultUtils = getVaults().get(player.getUniqueId());
+        if(getVaults().containsKey(ownerUUID)) {
+            PlayerVaultUtils playerVaultUtils = getVaults().get(ownerUUID);
 
             if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
                 for(Map.Entry<Material, Integer> entry : playerVaultUtils.getInventory().entrySet()) {
@@ -240,7 +251,6 @@ public class VaultManager {
 
                         return playerVaultUtils.setItem(material, value, amount, player);
                     }
-
                 }
             }
         }
@@ -251,7 +261,8 @@ public class VaultManager {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
 
-        meta.setLore(IslandVault.getLanguageManager().translateList(player, "menu.item.vaultItem.itemLore", Map.of("amount", String.valueOf(amount), "maxStackSize", String.valueOf(material.getMaxStackSize()))));
+
+        meta.setLore(IslandVault.getLanguageManager().translateList(player, "menu.item.vaultItem.itemLore", Map.of("amount", String.valueOf(amount), "maxStackSize", String.valueOf(material.getMaxStackSize())), true));
 
         if(playerIsOp) {
             List<String> lore = meta.getLore();
@@ -271,5 +282,39 @@ public class VaultManager {
             return getVaults().get(ownerUUID).getAutoCollect();
         }
         return false;
+    }
+
+    public boolean ownerCanSeeAutocollectMessage(UUID ownerUUID) {
+        if(getVaults().containsKey(ownerUUID)) {
+            return getVaults().get(ownerUUID).canSeeAutocollectMessage();
+        }
+        return false;
+    }
+
+    public void registerViewer(Player player, UUID islandOwner, VaultMenu menu) {
+        openMenus.computeIfAbsent(islandOwner, k -> ConcurrentHashMap.newKeySet()).add(menu);
+    }
+
+    public void unregisterViewer(Player player, UUID islandOwner) {
+        Set<VaultMenu> menus = openMenus.get(islandOwner);
+        if (menus != null) {
+            menus.removeIf(menu -> menu.getViewer().getUniqueId().equals(player.getUniqueId()));
+            if (menus.isEmpty()) {
+                openMenus.remove(islandOwner);
+            }
+        }
+    }
+
+    public void updateViewers(UUID islandOwner) {
+        Set<VaultMenu> menus = openMenus.get(islandOwner);
+        if (menus != null) {
+            for (VaultMenu menu : menus) {
+
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    menu.refreshData();
+                    menu.getViewer().updateInventory();
+                });
+            }
+        }
     }
 }

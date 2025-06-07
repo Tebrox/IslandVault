@@ -15,7 +15,7 @@ state:
 
 menu:
   title: "Dein Insellager"
-  titleAdmin: "Insellager von %owner%"
+  titleAdmin: "Insellager von %islandOwner%"
   firstPage: "&aErste Seite"
   previousPage: "&aVorherige Seite"
   nextPage: "&aNächste Seite"
@@ -25,15 +25,15 @@ menu:
   item:
     vaultItem:
       itemLore:
-        - "&9Menge: &f%amount:0%"
+        - "&9Menge: &f%amount%"
         - ""
-        - "&eLinksklick: &b%maxstacksize:64%x"
+        - "&eLinksklick: &b%maxStackSize%x"
         - "&eRechtsklick: &b1x"
         - "&eShiftklick: &fItem direkt ins Inventar"
     radius:
       displayName: "Automatisches Einsammeln"
       itemLore:
-        - "&eAktueller Radius: %radius:0%"
+        - "&eAktueller Radius: %radius%"
         - "&eStatus: &b%state%"
         - "&eLinksklick: &b%booleanState% einsammeln"
         - "&eRechtsklick: &bRadius für 5 Sekunden anzeigen"

@@ -15,7 +15,7 @@ state:
 
 menu:
   title: "Your Islandvault"
-  titleAdmin: "Islandvault from %owner%"
+  titleAdmin: "Islandvault from %islandOwner%"
   firstPage: "&aFirst page"
   previousPage: "&aPrevious page"
   nextPage: "&aNext page"
@@ -25,15 +25,15 @@ menu:
   item:
     vaultItem:
       itemLore:
-        - "&9Amount: &f%amount:0%"
+        - "&9Amount: &f%amount%"
         - ""
-        - "&eLeftclick: &b%maxstacksize:64%x"
+        - "&eLeftclick: &b%maxStackSize%x"
         - "&eRightclick: &b1x"
         - "&eShiftclick: &fItem to inventory"
     radius:
       displayName: "Autocollect"
       itemLore:
-        - "&eCurrent radius: %radius:0%"
+        - "&eCurrent radius: %radius%"
         - "&eState: &b%state%"
         - "&eLeftclick: &b%booleanState% autocollect"
         - "&eRightclick: &bShow radius for 5 seconds"

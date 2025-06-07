@@ -34,8 +34,8 @@ public class OPJoinListener implements Listener {
                 int compare = VersionComparator.compareVersions(current, latest);
 
                 if (compare < 0) {
-                    plugin.getVaultLogger().log(Level.WARNING, "Eine neue Version ist verfügbar: " + latest);
-                    plugin.getVaultLogger().log(Level.WARNING, "Aktuell verwendete Version: " + current);
+                    plugin.getLogger().log(Level.WARNING, "Eine neue Version ist verfügbar: " + latest);
+                    plugin.getLogger().log(Level.WARNING, "Aktuell verwendete Version: " + current);
 
                     String releaseUrl = "https://github.com/" + author + "/" + pluginName + "/releases/latest";
 

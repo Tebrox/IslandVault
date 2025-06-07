@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.Enums.LoggerAction;
 import de.tebrox.islandVault.Events.VaultUpdateEvent;
+import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Utils.AdminVaultLogger;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -17,6 +18,10 @@ public class VaultEventListener implements Listener {
 
     @EventHandler
     public void onVaultUpdate(VaultUpdateEvent event) {
+        IslandVault.getVaultManager().updateViewers(event.getVaultOwner());
+        if(event.getActor() == null) {
+            return;
+        }
         LoggerAction loggerAction;
         if(event.getAmountChange() > 0) {
             loggerAction = LoggerAction.ADD_ITEM;

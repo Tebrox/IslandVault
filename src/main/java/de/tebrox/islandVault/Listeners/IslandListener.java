@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.IslandPresenceTracker;
+import de.tebrox.islandVault.Manager.LanguageManager;
 import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Utils.IslandUtils;
 import de.tebrox.islandVault.Utils.PlayerVaultUtils;
@@ -40,6 +41,9 @@ public class IslandListener implements Listener {
             }
         }
 
+        LanguageManager.PlaceholderRegistry placeholderRegistry = IslandVault.getLanguageManager().getPlaceholders(Bukkit.getPlayer(playerUUID));
+        placeholderRegistry.set("islandOwner", Bukkit.getOfflinePlayer(event.getIsland().getOwner()).getName());
+
         IslandPresenceTracker.playerEnteredIsland(islandUUID, playerUUID);
     }
 
@@ -63,6 +67,8 @@ public class IslandListener implements Listener {
         Player player = event.getPlayer();
 
         MenuManager.addPlayerMenuUtilityMap(player);
+        LanguageManager.PlaceholderRegistry placeholderRegistry = IslandVault.getLanguageManager().getPlaceholders(player);
+        placeholderRegistry.set("player", player.getName());
 
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {

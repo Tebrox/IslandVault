@@ -29,9 +29,9 @@ public class VaultMainCommand extends MainCommand {
                 permissionDefault = PermissionDefault.FALSE;
             }
             if(PermissionUtils.registerPermission(cmd.getPermission(), cmd.getDescription(), permissionDefault)) {
-                IslandVault.getPlugin().getVaultLogger().log(Level.INFO, "Registered command: " + cmd.getSyntax());
+                IslandVault.getPlugin().getLogger().log(Level.INFO, "Registered command: " + cmd.getSyntax());
             }else{
-                IslandVault.getPlugin().getVaultLogger().warning("Cannot register command: " + cmd.getSyntax());
+                IslandVault.getPlugin().getLogger().warning("Cannot register command: " + cmd.getSyntax());
             }
 
         }

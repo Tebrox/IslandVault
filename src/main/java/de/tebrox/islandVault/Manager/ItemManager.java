@@ -30,6 +30,9 @@ public class ItemManager {
         internalBlacklist.add("rod");
         internalBlacklist.add("bow");
         internalBlacklist.add("shulker");
+        internalBlacklist.add("written_book");
+        internalBlacklist.add("command");
+        internalBlacklist.add("structure");
 
 
         createMaterialList();

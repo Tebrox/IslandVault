@@ -6,7 +6,7 @@
 
     <groupId>de.tebrox</groupId>
     <artifactId>IslandVault</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <packaging>jar</packaging>
 
     <name>IslandVault</name>
@@ -110,6 +110,11 @@
             <artifactId>api</artifactId>
             <version>5.5</version> <!-- oder die aktuelle Version -->
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.spongepowered</groupId>
+            <artifactId>configurate-yaml</artifactId>
+            <version>4.1.2</version>
         </dependency>
     </dependencies>
 </project>

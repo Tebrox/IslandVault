@@ -96,7 +96,7 @@ public final class ItemGroupManager {
                 }
 
                 permissionGroups.put(groupName, items);
-                PermissionUtils.registerPermission(Permissions.GROUPS + groupName, "Group " + groupName, PermissionDefault.FALSE);
+                PermissionUtils.registerPermission(Permissions.GROUPS.getLabel() + groupName, "Group " + groupName, PermissionDefault.FALSE);
                 plugin.getLogger().info("Loaded group " + groupName + " with " + items.size() + " items.");
             } catch (IOException | IllegalStateException e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to load group JSON file " + file.getName(), e);

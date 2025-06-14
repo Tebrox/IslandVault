@@ -1,12 +1,15 @@
 package de.tebrox.islandVault;
 
 import de.tebrox.islandVault.Utils.ItemStackKey;
+import de.tebrox.islandVault.Utils.LuckPermsUtils;
+import de.tebrox.islandVault.Utils.PermissionUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
@@ -22,6 +25,7 @@ public class PermissionItemRegistry {
 
     public PermissionItemRegistry(Plugin plugin) {
         this.plugin = plugin;
+        load();
     }
 
     public void load() {
@@ -32,6 +36,14 @@ public class PermissionItemRegistry {
         registerGoatHorns();
         registerEnchantedBooks();
         registerCustomItems(); // Optional
+
+        registerPermissions();
+    }
+
+    private void registerPermissions() {
+        for(String s : permissionItemMap.keySet()) {
+            PermissionUtils.registerPermission(s, "", PermissionDefault.FALSE);
+        }
     }
 
     private void loadBlacklist() {

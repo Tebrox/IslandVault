@@ -41,6 +41,7 @@ public final class IslandVault extends JavaPlugin {
     private Map<String, Integer> radiusPermissionMap = new HashMap<>();
     private static LanguageManager languageManager;
     private boolean debug;
+    private boolean firstStart = false;
 
     @Override
     public void onEnable() {
@@ -91,6 +92,7 @@ public final class IslandVault extends JavaPlugin {
         vaultManager = new VaultManager(this);
         vaultSyncManager = new VaultSyncManager(this);
         permissionItemRegistry = new PermissionItemRegistry(this);
+        ItemGroupManager.init(this);
 
         reloadPluginConfig(null);
 
@@ -217,21 +219,6 @@ public final class IslandVault extends JavaPlugin {
         }
     }
 
-    public void updateConfig() {
-        FileConfiguration config = getConfig();
-
-        // 3. Default-Config aus Resource laden (ohne zu speichern)
-        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(
-                new InputStreamReader(getResource("config.yml"), StandardCharsets.UTF_8)
-        );
-
-        // 4. Setze die Default-Config als Defaultwerte
-        config.setDefaults(defaultConfig);
-        config.options().copyDefaults(true);
-
-        saveConfig();
-    }
-
     public static MainCommand getMainCommand() {
         return mainCommand;
     }
@@ -257,7 +244,11 @@ public final class IslandVault extends JavaPlugin {
     public void reloadPluginConfig(CommandSender sender) {
         reloadConfig();
         debug = getConfig().getBoolean("debug", false);
-        getLogger().info("Config neu geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
+        if(!firstStart) {
+            getLogger().info("Config geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
+            firstStart = true;
+        }
+
         if(sender != null) {
             sender.sendMessage("Config neu geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
         }

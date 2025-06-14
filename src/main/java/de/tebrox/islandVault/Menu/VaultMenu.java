@@ -2,9 +2,8 @@ package de.tebrox.islandVault.Menu;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.MenuManager;
-import de.tebrox.islandVault.Manager.VaultManager;
 import de.tebrox.islandVault.Utils.*;
-import it.unimi.dsi.fastutil.Pair;
+import de.tebrox.islandVault.VaultData;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
@@ -21,10 +20,10 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.Nullable;
+import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class VaultMenu extends PaginatedMenu {
@@ -35,6 +34,7 @@ public class VaultMenu extends PaginatedMenu {
     private ItemSortUtil.SortOption currentOption;
     private ItemSortUtil.SortDirection currentDirection;
     private final List<ItemSortUtil.SortOption> options = Arrays.asList(ItemSortUtil.SortOption.values());
+    private Island island;
 
     private final Player viewer;
 
@@ -44,7 +44,9 @@ public class VaultMenu extends PaginatedMenu {
         this.viewer = playerMenuUtility.getOwner();
         this.ownerUUID = IslandUtils.getIslandOwnerUUID(playerMenuUtility.getOwner());
 
-        IslandVault.getVaultManager().registerViewer(viewer, ownerUUID, this);
+        island = BentoBox.getInstance().getIslands().getIslandAt(viewer.getLocation()).orElse(null);
+        IslandVault.getVaultSyncManager().registerViewer(island.getUniqueId(), viewer, this);
+
     }
 
     @Override
@@ -69,7 +71,9 @@ public class VaultMenu extends PaginatedMenu {
         currentDirection = PlayerDataUtils.loadSortDirection(playerMenuUtility.getOwner());
 
         List<ItemStack> vaultItems = IslandVault.getVaultManager().getPlayerVaultItems(playerMenuUtility.getOwner(), ownerUUID);
-        List<ItemStack> filteredItems = VaultManager.filterItems(player, vaultItems, searchQuery);
+        VaultData data = IslandVault.getVaultManager().getCache().get(island.getUniqueId());
+        data.
+        List<ItemStack> filteredItems = VaultManager_OLD.filterItems(player, vaultItems, searchQuery);
         ItemSortUtil.sortItems(filteredItems, ownerUUID, player, currentOption, currentDirection);
 
         int size = filteredItems.size();

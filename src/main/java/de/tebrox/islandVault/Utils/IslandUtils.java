@@ -3,14 +3,13 @@ package de.tebrox.islandVault.Utils;
 import de.tebrox.islandVault.IslandVault;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import world.bentobox.aoneblock.AOneBlock;
 import world.bentobox.bentobox.BentoBox;
+import world.bentobox.bentobox.api.addons.Addon;
 import world.bentobox.bentobox.database.objects.Island;
 import world.bentobox.bentobox.managers.IslandsManager;
 
@@ -171,5 +170,18 @@ public class IslandUtils {
         if (task != null) {
             task.cancel();
         }
+    }
+
+    public static World getOneBlockWorld() {
+        Addon addon = BentoBox.getInstance().getAddonsManager().getAddonByName("AOneBlock").orElse(null);
+        if (!(addon instanceof AOneBlock)) {
+            return null;
+        }
+
+        AOneBlock oneBlock = (AOneBlock) addon;
+
+        // Holt die Welt anhand des GameWorld-Namens (aus BentoBox-Config)
+        String worldName = oneBlock.getSettings().getWorldName();
+        return BentoBox.getInstance().getServer().getWorld(worldName);
     }
 }

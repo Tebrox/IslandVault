@@ -5,6 +5,8 @@ import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
 import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Menu.VaultMenu;
+import de.tebrox.islandVault.Utils.IslandUtils;
+import de.tebrox.islandVault.VaultData;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import org.bukkit.Bukkit;
@@ -12,6 +14,10 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
+import world.bentobox.aoneblock.AOneBlock;
+import world.bentobox.bentobox.BentoBox;
+import world.bentobox.bentobox.api.addons.Addon;
+import world.bentobox.bentobox.database.objects.Island;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,8 +54,8 @@ public class OpenPlayerVaultCommand implements SubCommand {
     public List<String> getTabCompletion(int index, String[] args) {
         if(index == 0) {
             List<String> players = new ArrayList<>();
-            for(File file : IslandVault.getVaultManager().loadAllVaultsToList()) {
-                players.add(Bukkit.getOfflinePlayer(UUID.fromString(file.getName().replaceAll(".yml", ""))).getName());
+            for(VaultData data : IslandVault.getVaultManager().getCache().values()) {
+                players.add(data.getOwnerName());
             }
             return players;
         }
@@ -73,10 +79,10 @@ public class OpenPlayerVaultCommand implements SubCommand {
             return;
         }
 
-        if(!IslandVault.getVaultManager().getVaults().containsKey(offlinePlayer.getUniqueId())) {
-            IslandVault.getVaultManager().loadVault(offlinePlayer.getUniqueId());
+        Island island = BentoBox.getInstance().getIslands().getIsland(IslandUtils.getOneBlockWorld(), player.getUniqueId());
+        if(!IslandVault.getVaultManager().isOwnerInCache(offlinePlayer.getName())) {
+            IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), offlinePlayer.getName());
         }
-
 
         try {
             MenuManager.getPlayerMenuUtility(player).setData("adminOpen", offlinePlayer.getUniqueId());

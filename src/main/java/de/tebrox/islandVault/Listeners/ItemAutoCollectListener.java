@@ -1,7 +1,9 @@
 package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Manager.ItemGroupManager;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
+import de.tebrox.islandVault.VaultData;
 import org.bukkit.*;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -40,7 +42,6 @@ public class ItemAutoCollectListener implements Listener {
         if (data.has(dropMarkerKey, PersistentDataType.INTEGER)) return;
 
         Location itemLocation = item.getLocation();
-        World world = itemLocation.getWorld();
 
         Optional<Island> optIsland = BentoBox.getInstance().getIslands().getIslandAt(itemLocation);
         if (optIsland.isEmpty()) return;
@@ -56,7 +57,8 @@ public class ItemAutoCollectListener implements Listener {
         UUID ownerUUID = island.getOwner();
         if (ownerUUID == null) return;
 
-        if(!IslandVault.getVaultManager().autoCollectIsEnabled(ownerUUID)) {
+        VaultData vaultData = IslandVault.getVaultManager().getCachedVault(island.getUniqueId());
+        if(!vaultData.isAutoCollect()) {
             return;
         }
 
@@ -68,9 +70,19 @@ public class ItemAutoCollectListener implements Listener {
 
         ItemStack baseStack = item.getItemStack();
 
-        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, baseStack.getType())) return;
+        boolean groupPermission = false;
+        List<String> groups = ItemGroupManager.findGroupsWithMaterial(item.getItemStack().getType().toString());
+        if(!groups.isEmpty()) {
+            for(String g : groups) {
+                if(LuckPermsUtils.hasPermissionForGroup(ownerUUID, g)) {
+                    groupPermission = true;
+                    break;
+                }
+            }
+        }
 
-        // Suche nach ähnlichen Items im Radius von 1 Block zum Zusammenlegen
+        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, baseStack.getType()) && !groupPermission) return;
+
         List<Item> nearbyItems = item.getWorld().getNearbyEntities(item.getLocation(), 1, 1, 1).stream()
                 .filter(e -> e instanceof Item)
                 .map(e -> (Item) e)
@@ -88,13 +100,7 @@ public class ItemAutoCollectListener implements Listener {
             if (baseStack.getAmount() >= baseStack.getMaxStackSize()) break;
         }
 
-        IslandVault.getVaultManager().addItemToVault(baseStack.getType(), baseStack.getAmount(), ownerUUID, null);
-        Player owner = Bukkit.getPlayer(island.getOwner());
-
-        if(IslandVault.getVaultManager().ownerCanSeeAutocollectMessage(ownerUUID)) {
-            //String message = plugin.getLanguageManager().translate();
-            //.sendMessage(ChatColor.GREEN + "[IslandVault] " + plugin.getLanguageManager().translate(owner, "collectItemSuccessfull", Map.of("item", baseStack.getI18NDisplayName(), "amount", String.valueOf(baseStack.getAmount()))));
-        }
+        vaultData.add(baseStack, baseStack.getAmount());
 
         item.remove();
     }

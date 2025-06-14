@@ -4,12 +4,10 @@ import de.tebrox.islandVault.Commands.AdminCommand.VaultAdminMainCommand;
 import de.tebrox.islandVault.Commands.VaultMainCommand;
 import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Listeners.*;
+import de.tebrox.islandVault.Manager.*;
 import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
-import de.tebrox.islandVault.Manager.ItemManager;
-import de.tebrox.islandVault.Manager.LanguageManager;
-import de.tebrox.islandVault.Manager.MenuManager;
-import de.tebrox.islandVault.Manager.VaultManager;
 import de.tebrox.islandVault.Utils.*;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -19,9 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.spongepowered.configurate.CommentedConfigurationNode;
-import org.spongepowered.configurate.ConfigurateException;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
+import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 import world.bentobox.bentobox.managers.IslandsManager;
 
@@ -34,8 +30,9 @@ import java.util.logging.Formatter;
 public final class IslandVault extends JavaPlugin {
 
     private static IslandVault plugin;
-    private static ItemManager itemManager;
     private static VaultManager vaultManager;
+    private static VaultSyncManager vaultSyncManager;
+    private static PermissionItemRegistry permissionItemRegistry;
     FileConfiguration config = getConfig();
     private static HashMap<String, List<String>> permissionGroups = new HashMap<>();
     private static MainCommand mainCommand;
@@ -91,8 +88,9 @@ public final class IslandVault extends JavaPlugin {
 
         languageManager = new LanguageManager(this);
 
-        itemManager = new ItemManager(this);
         vaultManager = new VaultManager(this);
+        vaultSyncManager = new VaultSyncManager(this);
+        permissionItemRegistry = new PermissionItemRegistry(this);
 
         reloadPluginConfig(null);
 
@@ -112,10 +110,11 @@ public final class IslandVault extends JavaPlugin {
                     }
 
                     Island island = islandsManager.getIsland(player.getWorld(), player.getUniqueId());
-                    if(island != null) {
-                        UUID ownerUUID = island.getOwner();
-
-                        IslandVault.getVaultManager().loadVault(ownerUUID);
+                    if (island != null) {
+                        IslandTracker.setPlayerIsland(player.getUniqueId(), island);
+                        IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), Bukkit.getOfflinePlayer(island.getOwner()).getName());
+                    } else {
+                        IslandTracker.removePlayerIsland(player.getUniqueId());
                     }
                 }
             }
@@ -124,25 +123,23 @@ public final class IslandVault extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if(!getVaultManager().getVaults().isEmpty()) {
-            for(Map.Entry<UUID, PlayerVaultUtils> entry : getVaultManager().getVaults().entrySet()) {
-                IslandVault.getVaultManager().saveVault(entry.getValue());
-            }
-            getVaultManager().getVaults().clear();
-        }
-
+        vaultManager.flushAll();
     }
 
     public static IslandVault getPlugin() {
         return plugin;
     }
 
-    public static ItemManager getItemManager() {
-        return itemManager;
-    }
-
     public static VaultManager getVaultManager() {
         return vaultManager;
+    }
+
+    public static VaultSyncManager getVaultSyncManager() {
+        return vaultSyncManager;
+    }
+
+    public static PermissionItemRegistry getPermissionItemRegistry() {
+        return permissionItemRegistry;
     }
 
     public static HashMap<String, List<String>> getPermissionGroups() {
@@ -175,23 +172,10 @@ public final class IslandVault extends JavaPlugin {
     }
 
     private void registerPermissions() {
-        ConfigurationSection section = config.getConfigurationSection(Permissions.GROUPS_CONFIG.getLabel());
-
-        for(String groupLabel : section.getKeys(false)) {
-            String permission = Permissions.GROUPS.getLabel() + groupLabel;
-            if(PermissionUtils.registerPermission(permission, "Itemgroup " + groupLabel, PermissionDefault.FALSE)) {
-                if(!permissionGroups.containsKey(groupLabel)) {
-                    List<String> permissions = getConfig().getStringList(Permissions.GROUPS_CONFIG.getLabel() + "." + groupLabel);
-                    permissionGroups.put(groupLabel, permissions);
-                    getLogger().log(Level.INFO, "Loaded group: " + groupLabel + " with entries " + permissions.toString());
-                }
-            }
-
-        }
-
-        for(Material material : itemManager.getMaterialList()) {
-            String permission = Permissions.VAULT.getLabel() + material.toString().toLowerCase();
-            if(PermissionUtils.registerPermission(permission, "Vault item " + material.toString(), PermissionDefault.FALSE)) {
+        Map<String, ItemPermissionRule> items = permissionItemRegistry.getWhitelistedItems();
+        for(String id : permissionItemRegistry.getWhitelistedItems().keySet()) {
+            String permission = Permissions.VAULT.getLabel() + id;
+            if(PermissionUtils.registerPermission(permission, "Vault item " + id, PermissionDefault.FALSE)) {
                 //debugLogger.info("Registered vault item: " + material.toString());
             }else{
                 //debugLogger.warning("Cannot register vault item: " + material.toString());

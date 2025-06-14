@@ -1,11 +1,9 @@
 package de.tebrox.islandVault.Commands.AdminCommand.ItemGroups;
 
-import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
 import de.tebrox.islandVault.Manager.GroupEditManager;
 import de.tebrox.islandVault.Manager.ItemGroupManager;
-import de.tebrox.islandVault.Manager.ItemManager;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -53,10 +51,14 @@ public class EditGroupChatCommand implements SubCommand {
         if (index > 0) {
             // Vorschlag für Materialien, wenn Item(s) hinzugefügt werden
             String lastArg = args[args.length - 1].toUpperCase();
+            /**
             return IslandVault.getItemManager().getMaterialList().stream()
                     .map(Material::name)
                     .filter(name -> name.startsWith(lastArg))
                     .collect(Collectors.toList());
+             **/
+            //TODO
+            return Collections.emptyList();
         }
         return Collections.emptyList();
     }

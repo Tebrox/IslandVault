@@ -68,7 +68,7 @@ public class SettingsMenu extends Menu {
                     break;
                 case Material.HOPPER:
                     if(inventoryClickEvent.isLeftClick()) {
-                        IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).setAutoCollect(!IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).getAutoCollect());
+                        //IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).setAutoCollect(!IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).getAutoCollect());
                         player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                         reloadItems();
                     }
@@ -109,7 +109,8 @@ public class SettingsMenu extends Menu {
 
     private List<String> createAccessLore() {
         List<String> lore = new ArrayList<>();
-        int currentLevel = IslandVault.getVaultManager().getAccessLevel(playerMenuUtility.getOwner().getUniqueId());
+        //int currentLevel = IslandVault.getVaultManager().getAccessLevel(playerMenuUtility.getOwner().getUniqueId());
+        int currentLevel = BentoBoxRanks.getId("owner");
 
 
         List<Integer> ACCESS_LEVELS = BentoBoxRanks.getSortedRoleIds();

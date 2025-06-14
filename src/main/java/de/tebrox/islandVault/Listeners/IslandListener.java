@@ -5,9 +5,7 @@ import de.tebrox.islandVault.Manager.IslandTracker;
 import de.tebrox.islandVault.Manager.LanguageManager;
 import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Utils.IslandUtils;
-import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,7 +17,6 @@ import world.bentobox.bentobox.api.events.island.IslandEnterEvent;
 import world.bentobox.bentobox.api.events.island.IslandExitEvent;
 import world.bentobox.bentobox.database.objects.Island;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public class IslandListener implements Listener {
@@ -38,9 +35,11 @@ public class IslandListener implements Listener {
         // Hole die Insel an der Position des Spielers (z. B. Spawnpunkt)
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {
+            if(IslandTracker.isIslandEmpty(island.getUniqueId())) {
+                IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), Bukkit.getOfflinePlayer(island.getOwner()).getName());
+            }
             IslandTracker.setPlayerIsland(player.getUniqueId(), island);
         } else {
-            // Spieler ist nicht auf einer Insel – sicherstellen, dass nichts altes bleibt
             IslandTracker.removePlayerIsland(player.getUniqueId());
         }
     }
@@ -54,12 +53,7 @@ public class IslandListener implements Listener {
             IslandTracker.removePlayerIsland(player.getUniqueId());
 
             if (IslandTracker.isIslandEmpty(island.getUniqueId())) {
-                UUID owner = island.getOwner();
-                if (IslandVault.getVaultManager().getVaults().containsKey(owner)) {
-                    PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(owner);
-                    IslandVault.getVaultManager().saveVault(playerVaultUtils);
-                    IslandVault.getVaultManager().getVaults().remove(owner);
-                }
+                IslandVault.getVaultManager().saveVaultAsync(island.getUniqueId(), Bukkit.getOfflinePlayer(island.getOwner()).getName());
             }
         }
     }
@@ -74,6 +68,9 @@ public class IslandListener implements Listener {
 
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {
+            if(IslandTracker.isIslandEmpty(island.getUniqueId())) {
+                IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), Bukkit.getOfflinePlayer(island.getOwner()).getName());
+            }
             IslandTracker.setPlayerIsland(player.getUniqueId(), island);
         } else {
             IslandTracker.removePlayerIsland(player.getUniqueId());
@@ -91,12 +88,7 @@ public class IslandListener implements Listener {
             IslandTracker.removePlayerIsland(player.getUniqueId());
 
             if (IslandTracker.isIslandEmpty(island.getUniqueId())) {
-                UUID owner = island.getOwner();
-                if (IslandVault.getVaultManager().getVaults().containsKey(owner)) {
-                    PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(owner);
-                    IslandVault.getVaultManager().saveVault(playerVaultUtils);
-                    IslandVault.getVaultManager().getVaults().remove(owner);
-                }
+                IslandVault.getVaultManager().saveVaultAsync(island.getUniqueId(), Bukkit.getOfflinePlayer(island.getOwner()).getName());
             }
         }
     }

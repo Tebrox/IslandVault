@@ -236,6 +236,7 @@ public final class IslandVault extends JavaPlugin {
         if(sender != null) {
             sender.sendMessage("Config neu geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
         }
+        getItemManager().reload();
         registerPermissions();
 
     }

@@ -1,11 +1,9 @@
 package de.tebrox.islandVault.Manager;
 
-import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Menu.VaultMenu;
 import de.tebrox.islandVault.Utils.ItemNameTranslator;
-import de.tebrox.islandVault.Utils.ItemSortUtil;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import org.bukkit.Bukkit;

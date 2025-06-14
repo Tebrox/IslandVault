@@ -15,8 +15,11 @@ public class ItemManager {
 
     public ItemManager(IslandVault plugin) {
         this.plugin = plugin;
-        item_blacklist = plugin.getConfig().getStringList("blacklist");
+        reload();
+    }
 
+    public void reload() {
+        item_blacklist = plugin.getConfig().getStringList("blacklist");
         internalBlacklist = new ArrayList<>();
         internalBlacklist.add("shovel");
         internalBlacklist.add("sword");
@@ -34,7 +37,6 @@ public class ItemManager {
         internalBlacklist.add("command");
         internalBlacklist.add("structure");
 
-
         createMaterialList();
     }
 
@@ -43,6 +45,7 @@ public class ItemManager {
     }
 
     private void createMaterialList() {
+        materialList.clear();
         Material[] materials = Material.values();
         for(Material mat : materials) {
             if(!mat.isAir() && !materialIsBlacklisted(mat) && !materialIsInternalBlacklisted(mat) && mat.isItem()) {

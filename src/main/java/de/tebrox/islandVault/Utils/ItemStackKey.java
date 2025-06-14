@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.Utils;
 
 import de.tebrox.islandVault.Base64ItemSerializer;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -39,4 +40,8 @@ public class ItemStackKey {
         return key;
     }
 
+    public ItemStack toItemStack() {
+        if ("AIR".equals(key)) return new ItemStack(Material.AIR);
+        return Base64ItemSerializer.deserialize(key);
+    }
 }

@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.UUID;
 
@@ -12,15 +13,15 @@ public class VaultUpdateEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
 
     private final Player actor;
-    private final UUID vaultOwner;
+    private final Island island;
     private final Material material;
     private final int amountChange;
     private final boolean isAutoCollect;
     private boolean cancelled;
 
-    public VaultUpdateEvent(Player actor, UUID vaultOwner, Material material, int amountChange, boolean isAutoCollect) {
+    public VaultUpdateEvent(Player actor, Island island, Material material, int amountChange, boolean isAutoCollect) {
         this.actor = actor;
-        this.vaultOwner = vaultOwner;
+        this.island = island;
         this.material = material;
         this.amountChange = amountChange;
         this.isAutoCollect = isAutoCollect;
@@ -30,8 +31,8 @@ public class VaultUpdateEvent extends Event implements Cancellable {
         return actor;
     }
 
-    public UUID getVaultOwner() {
-        return vaultOwner;
+    public Island getIsland() {
+        return island;
     }
 
     public Material getMaterial() {

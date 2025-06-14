@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.Utils;
 
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.VaultData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.translation.GlobalTranslator;
 import org.bukkit.ChatColor;
@@ -31,13 +32,20 @@ public class ItemSortUtil {
      * @param sortOption Die Sortieroption (ID, NAME, AMOUNT, LOCALIZED_NAME)
      * @param sortDirection  Die Sortierrichtung (ASCENDING oder DESCENDING)
      */
-    public static void sortItems(List<ItemStack> items, UUID ownerUUID, Player player, SortOption sortOption, SortDirection sortDirection) {
+    public static void sortItems(List<ItemStack> items, VaultData data, Player player, SortOption sortOption, SortDirection sortDirection) {
         if (items == null || sortOption == null || player == null || sortDirection == null) return;
+
+        if (data == null) return;
 
         Comparator<ItemStack> comparator = switch (sortOption) {
             case ID -> Comparator.comparing(ItemStack::getType);
-            case AMOUNT -> Comparator.comparingInt(item -> IslandVault.getVaultManager().getVaults().get(ownerUUID).getInventory().getOrDefault(item.getType(), 0));
-            case LOCALIZED_NAME -> Comparator.comparing(item -> ItemNameTranslator.getLocalizedName(item, player));
+
+            case AMOUNT -> Comparator.comparingInt(item -> {
+                ItemStackKey key = ItemStackKey.of(item);
+                return data.getItems().getOrDefault(key, 0);
+            });
+
+            case LOCALIZED_NAME -> Comparator.comparing(item -> ItemNameTranslator.getLocalizedName(item, player), String.CASE_INSENSITIVE_ORDER);
         };
 
         if (sortDirection == SortDirection.DESCENDING) {

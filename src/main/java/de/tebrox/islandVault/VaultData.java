@@ -71,21 +71,31 @@ public class VaultData {
         this.accessLevel = BentoBoxRanks.getId(roleName);
     }
 
-    public void add(ItemStack stack, int amount) {
+    public boolean add(ItemStack stack, int amount) {
+        if (amount <= 0) return false; // Kein Hinzufügen von null oder negativen Mengen
+
         ItemStackKey key = ItemStackKey.of(stack);
         int current = items.getOrDefault(key, 0);
         setAmount(stack, current + amount);
+        return true;
     }
 
-    public void remove(ItemStack stack, int amount) {
-        add(stack, -amount);
+    public boolean remove(ItemStack stack, int amount) {
+        if (amount <= 0) return false; // Kein Entfernen von null oder negativen Mengen
+
+        ItemStackKey key = ItemStackKey.of(stack);
+        int current = items.getOrDefault(key, 0);
+        if (current < amount) return false; // Nicht genügend Items vorhanden
+
+        setAmount(stack, current - amount);
+        return true;
     }
 
     public boolean isEmpty() {
         return items.isEmpty();
     }
 
-    public static List<ItemStack> filterItems(Player player, @Nullable String searchQuery) {
+    public List<ItemStack> filterItems(Player player, @Nullable String searchQuery) {
         if (searchQuery == null || searchQuery.trim().isEmpty()) {
             // Alle Items zurückgeben (nur Keys in ItemStacks umwandeln)
             return items.keySet().stream()
@@ -117,5 +127,45 @@ public class VaultData {
                     return false;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public List<ItemStack> getAllItems() {
+        List<ItemStack> result = new ArrayList<>();
+        for (Map.Entry<ItemStackKey, Integer> entry : items.entrySet()) {
+            ItemStackKey key = entry.getKey();
+            long amount = entry.getValue();
+
+            if (amount <= 0) continue;
+
+            ItemStack base = key.toItemStack();
+            while (amount > 0) {
+                ItemStack copy = base.clone();
+                int stackAmount = (int) Math.min(amount, base.getMaxStackSize());
+                copy.setAmount(stackAmount);
+                result.add(copy);
+                amount -= stackAmount;
+            }
+        }
+        return result;
+    }
+
+    public ItemStack extractItem(ItemStackKey key, int requestedAmount) {
+        int currentAmount = items.getOrDefault(key, 0);
+        if (currentAmount <= 0) {
+            return null; // Nichts da
+        }
+
+        int takeAmount = Math.min(requestedAmount, currentAmount);
+        int newAmount = currentAmount - takeAmount;
+
+        if (newAmount > 0) {
+            items.put(key, newAmount);
+        } else {
+            items.remove(key);
+        }
+
+        ItemStack item = Base64ItemSerializer.deserialize(key.toString());
+        item.setAmount(takeAmount);
+        return item;
     }
 }

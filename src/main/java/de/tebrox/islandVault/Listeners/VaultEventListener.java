@@ -4,6 +4,8 @@ import de.tebrox.islandVault.Enums.LoggerAction;
 import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Utils.AdminVaultLogger;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.slf4j.Logger;
@@ -18,7 +20,7 @@ public class VaultEventListener implements Listener {
 
     @EventHandler
     public void onVaultUpdate(VaultUpdateEvent event) {
-        IslandVault.getVaultManager().updateViewers(event.getVaultOwner());
+        IslandVault.getVaultSyncManager().refreshViewers(event.getIsland().getUniqueId());
         if(event.getActor() == null) {
             return;
         }
@@ -28,6 +30,6 @@ public class VaultEventListener implements Listener {
         }else{
             loggerAction = LoggerAction.REMOVE_ITEM;
         }
-        logger.logAction(loggerAction, event.getActor(), event.getVaultOwner(), event.getMaterial(), Math.abs(event.getAmountChange()));
+        logger.logAction(loggerAction, event.getActor(), event.getIsland().getOwner(), event.getMaterial(), Math.abs(event.getAmountChange()));
     }
 }

@@ -79,4 +79,7 @@ public class PlayerVaultUtils {
         return new ItemStack(material, toExtract);
     }
 
+    public void clearUnlockedMaterial() {
+        unlockedMaterial.clear();
+    }
 }

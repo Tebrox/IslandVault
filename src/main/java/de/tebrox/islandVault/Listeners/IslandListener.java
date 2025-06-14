@@ -1,7 +1,7 @@
 package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.Manager.IslandPresenceTracker;
+import de.tebrox.islandVault.Manager.IslandTracker;
 import de.tebrox.islandVault.Manager.LanguageManager;
 import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Utils.IslandUtils;
@@ -33,31 +33,33 @@ public class IslandListener implements Listener {
     @EventHandler
     public void onIslandEnter(IslandEnterEvent event) {
         UUID playerUUID = event.getPlayerUUID();
-        String islandUUID = event.getIsland().getUniqueId();
+        Player player = Bukkit.getPlayer(playerUUID);
 
-        if(IslandPresenceTracker.isIslandIsEmpty(islandUUID)) {
-            if(!IslandVault.getVaultManager().getVaults().containsKey(event.getIsland().getOwner())) {
-                IslandVault.getVaultManager().loadVault(event.getIsland().getOwner());
-            }
+        // Hole die Insel an der Position des Spielers (z. B. Spawnpunkt)
+        Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
+        if (island != null) {
+            IslandTracker.setPlayerIsland(player.getUniqueId(), island);
+        } else {
+            // Spieler ist nicht auf einer Insel – sicherstellen, dass nichts altes bleibt
+            IslandTracker.removePlayerIsland(player.getUniqueId());
         }
-
-        LanguageManager.PlaceholderRegistry placeholderRegistry = IslandVault.getLanguageManager().getPlaceholders(Bukkit.getPlayer(playerUUID));
-        placeholderRegistry.set("islandOwner", Bukkit.getOfflinePlayer(event.getIsland().getOwner()).getName());
-
-        IslandPresenceTracker.playerEnteredIsland(islandUUID, playerUUID);
     }
 
     @EventHandler
     public void onIslandExit(IslandExitEvent event) {
         UUID playerUUID = event.getPlayerUUID();
-        String islandUUID = event.getIsland().getUniqueId();
-        IslandPresenceTracker.playerLeftIsland(islandUUID, playerUUID);
+        Player player = Bukkit.getPlayer(playerUUID);
+        Island island = IslandTracker.getPlayerIsland(player.getUniqueId());
+        if (island != null) {
+            IslandTracker.removePlayerIsland(player.getUniqueId());
 
-        if(IslandPresenceTracker.isIslandIsEmpty(islandUUID)) {
-            if(IslandVault.getVaultManager().getVaults().containsKey(event.getIsland().getOwner())){
-                PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(event.getIsland().getOwner());
-                IslandVault.getVaultManager().saveVault(playerVaultUtils);
-                IslandVault.getVaultManager().getVaults().remove(event.getIsland().getOwner());
+            if (IslandTracker.isIslandEmpty(island.getUniqueId())) {
+                UUID owner = island.getOwner();
+                if (IslandVault.getVaultManager().getVaults().containsKey(owner)) {
+                    PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(owner);
+                    IslandVault.getVaultManager().saveVault(playerVaultUtils);
+                    IslandVault.getVaultManager().getVaults().remove(owner);
+                }
             }
         }
     }
@@ -72,13 +74,9 @@ public class IslandListener implements Listener {
 
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {
-            if(IslandPresenceTracker.isIslandIsEmpty(island.getUniqueId())) {
-                if(!IslandVault.getVaultManager().getVaults().containsKey(island.getOwner())) {
-                    IslandVault.getVaultManager().loadVault(island.getOwner());
-                }
-            }
-
-            IslandPresenceTracker.playerEnteredIsland(island.getUniqueId(), player.getUniqueId());
+            IslandTracker.setPlayerIsland(player.getUniqueId(), island);
+        } else {
+            IslandTracker.removePlayerIsland(player.getUniqueId());
         }
     }
 
@@ -88,16 +86,17 @@ public class IslandListener implements Listener {
 
         MenuManager.removeFromPlayerMenuUtilityMap(player);
 
-        Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
+        Island island = IslandTracker.getPlayerIsland(player.getUniqueId());
         if (island != null) {
-            IslandPresenceTracker.playerLeftIsland(island.getUniqueId(), player.getUniqueId());
-        }
+            IslandTracker.removePlayerIsland(player.getUniqueId());
 
-        if(IslandPresenceTracker.isIslandIsEmpty(island.getUniqueId())) {
-            if(IslandVault.getVaultManager().getVaults().containsKey(island.getOwner())){
-                PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(island.getOwner());
-                IslandVault.getVaultManager().saveVault(playerVaultUtils);
-                IslandVault.getVaultManager().getVaults().remove(island.getOwner());
+            if (IslandTracker.isIslandEmpty(island.getUniqueId())) {
+                UUID owner = island.getOwner();
+                if (IslandVault.getVaultManager().getVaults().containsKey(owner)) {
+                    PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(owner);
+                    IslandVault.getVaultManager().saveVault(playerVaultUtils);
+                    IslandVault.getVaultManager().getVaults().remove(owner);
+                }
             }
         }
     }

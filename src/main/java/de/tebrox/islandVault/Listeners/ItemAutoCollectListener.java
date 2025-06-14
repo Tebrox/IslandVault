@@ -1,7 +1,6 @@
 package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.Manager.ItemGroupManager;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import org.bukkit.*;
 import org.bukkit.entity.Item;
@@ -69,18 +68,7 @@ public class ItemAutoCollectListener implements Listener {
 
         ItemStack baseStack = item.getItemStack();
 
-        boolean groupPermission = false;
-        List<String> groups = ItemGroupManager.findGroupsWithMaterial(item.getItemStack().getType().toString());
-        if(!groups.isEmpty()) {
-            for(String g : groups) {
-                if(LuckPermsUtils.hasPermissionForGroup(ownerUUID, g)) {
-                    groupPermission = true;
-                    break;
-                }
-            }
-        }
-
-        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, baseStack.getType()) || !groupPermission) return;
+        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, baseStack.getType())) return;
 
         // Suche nach ähnlichen Items im Radius von 1 Block zum Zusammenlegen
         List<Item> nearbyItems = item.getWorld().getNearbyEntities(item.getLocation(), 1, 1, 1).stream()

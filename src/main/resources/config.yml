@@ -11,7 +11,3 @@ blacklist: [spawn_egg, head]
 # Debug-Modus ein-/ausschalten (true = aktiviert, false = deaktiviert).
 # Bei aktiviertem Debug werden zusätzliche Infos z.B. im Server-Log ausgegeben.
 debug: false
-
-# Definition von Permission-Gruppen mit zugehörigen Items.
-permission_groups:
-  test: [REDSTONE_TORCH, REDSTONE_BLOCK, REDSTONE]

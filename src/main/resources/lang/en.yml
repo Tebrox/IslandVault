@@ -21,6 +21,7 @@ menu:
   nextPage: "&aNext page"
   lastPage: "&aLast page"
   close: "&4Close"
+  settings: "&aSettings"
   showRadius: "&6Show autocollect radius for 5 seconds"
   item:
     vaultItem:

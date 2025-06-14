@@ -18,6 +18,7 @@ public class PlayerVaultUtils {
     private List<Material> unlockedMaterial = new ArrayList<>();
     private boolean autoCollect = false;
     private boolean showAutocollectMessage = false;
+    private int accessLevel = BentoBoxRanks.getId("owner");
 
     public PlayerVaultUtils(UUID ownerUUID, HashMap<Material, Integer> inventory) {
         this.inventory = inventory;
@@ -30,6 +31,14 @@ public class PlayerVaultUtils {
 
     public UUID getOwnerUUID() {
         return ownerUUID;
+    }
+
+    public int getAccessLevel() {
+        return accessLevel;
+    }
+
+    public void setAccessLevel(int level) {
+        this.accessLevel = level;
     }
 
     public boolean getAutoCollect() {

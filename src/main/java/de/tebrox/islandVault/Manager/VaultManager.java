@@ -3,10 +3,7 @@ package de.tebrox.islandVault.Manager;
 import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Menu.VaultMenu;
-import de.tebrox.islandVault.Utils.ItemNameTranslator;
-import de.tebrox.islandVault.Utils.ItemSortUtil;
-import de.tebrox.islandVault.Utils.LuckPermsUtils;
-import de.tebrox.islandVault.Utils.PlayerVaultUtils;
+import de.tebrox.islandVault.Utils.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -71,6 +68,7 @@ public class VaultManager {
                 data.set("Player.name", Bukkit.getOfflinePlayer(ownerUUID).getName());
                 data.set("Player.Autocollect", false);
                 data.set("Player.ShowAutocollectMessage", false);
+                data.set("Player.AccessLevel", BentoBoxRanks.getId("owner"));
                 for(Material material : IslandVault.getItemManager().getMaterialList()) {
                     data.set("Inventory." + material, 0);
                     vaultItemList.put(material, 0);
@@ -111,6 +109,10 @@ public class VaultManager {
                 utils.setShowAutocollectMessage(data.getBoolean("Player.ShowAutocollectMessage"));
             }
 
+            if(data.get("Player.AccessLevel") != null) {
+                utils.setAccessLevel(data.getInt("Players.AccessLevel"));
+            }
+
             vaults.put(ownerUUID, utils);
         }
     }
@@ -132,6 +134,7 @@ public class VaultManager {
         data.set("Player.name", Bukkit.getOfflinePlayer(playerVaultUtils.getOwnerUUID()).getName());
         data.set("Player.Autocollect", playerVaultUtils.getAutoCollect());
         data.set("Player.ShowAutocollectMessage", playerVaultUtils.canSeeAutocollectMessage());
+        data.set("Player.AccessLevel", playerVaultUtils.getAccessLevel());
 
         for(Map.Entry<Material, Integer> entry : playerVaultUtils.getInventory().entrySet()) {
             Material material = entry.getKey();
@@ -275,6 +278,13 @@ public class VaultManager {
         item.setItemMeta(meta);
 
         return item;
+    }
+
+    public int getAccessLevel(UUID ownerUUID){
+        if(getVaults().containsKey(ownerUUID)) {
+            return getVaults().get(ownerUUID).getAccessLevel();
+        }
+        return 0;
     }
 
     public boolean autoCollectIsEnabled(UUID ownerUUID) {

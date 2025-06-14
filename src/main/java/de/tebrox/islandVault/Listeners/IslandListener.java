@@ -19,6 +19,7 @@ import world.bentobox.bentobox.api.events.island.IslandEnterEvent;
 import world.bentobox.bentobox.api.events.island.IslandExitEvent;
 import world.bentobox.bentobox.database.objects.Island;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -67,6 +68,7 @@ public class IslandListener implements Listener {
         Player player = event.getPlayer();
 
         MenuManager.addPlayerMenuUtilityMap(player);
+        IslandVault.getLanguageManager().setLocale(player, Locale.forLanguageTag(player.getLocale().replace('_', '-')));
         LanguageManager.PlaceholderRegistry placeholderRegistry = IslandVault.getLanguageManager().getPlaceholders(player);
         placeholderRegistry.set("player", player.getName());
 
@@ -87,6 +89,7 @@ public class IslandListener implements Listener {
         Player player = event.getPlayer();
 
         MenuManager.removeFromPlayerMenuUtilityMap(player);
+        IslandVault.getLanguageManager().removeLocale(player);
 
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {

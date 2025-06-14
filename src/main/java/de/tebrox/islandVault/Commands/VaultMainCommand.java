@@ -28,10 +28,13 @@ public class VaultMainCommand extends MainCommand {
             if(permissionDefault == null) {
                 permissionDefault = PermissionDefault.FALSE;
             }
+
+            if(cmd.getPermission() == null) continue;
+
             if(PermissionUtils.registerPermission(cmd.getPermission(), cmd.getDescription(), permissionDefault)) {
-                IslandVault.getPlugin().getLogger().log(Level.INFO, "Registered command: " + cmd.getSyntax());
+                IslandVault.getPlugin().getLogger().log(Level.INFO, "Registered permission: " + cmd.getSyntax());
             }else{
-                IslandVault.getPlugin().getLogger().warning("Cannot register command: " + cmd.getSyntax());
+                IslandVault.getPlugin().getLogger().warning("Cannot register permission: " + cmd.getSyntax());
             }
 
         }

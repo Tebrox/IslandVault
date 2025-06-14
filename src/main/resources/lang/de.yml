@@ -21,6 +21,7 @@ menu:
   nextPage: "&aNächste Seite"
   lastPage: "&aLetzte Seite"
   close: "&4Schließen"
+  settings: "&aEinstellungen"
   showRadius: "&Sammelradius für 5 Sekunden anzeigen"
   item:
     vaultItem:

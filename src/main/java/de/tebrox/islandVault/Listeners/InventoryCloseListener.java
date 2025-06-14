@@ -30,6 +30,8 @@ public class InventoryCloseListener implements Listener {
             PlayerMenuUtility playerMenuUtility = MenuManager.getPlayerMenuUtility(player);
             playerMenuUtility.setData("searchQuery", null);
             playerMenuUtility.setData("adminOpen", null);
+            playerMenuUtility.setData("previousMenu", null);
+            playerMenuUtility.setData("ownerUUID", null);
             MenuManager.getPlayerMenuUtilityMap().put(player.getUniqueId(), playerMenuUtility);
         } catch (MenuManagerNotSetupException e) {
             throw new RuntimeException(e);

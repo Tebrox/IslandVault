@@ -48,8 +48,13 @@ public class AdminHelpCommand implements SubCommand {
 
         for (SubCommand subCommand : IslandVault.getAdminMainCommand().getSubCommands())
         {
-            if (sender.hasPermission(subCommand.getPermission()))
+            if(subCommand.getPermission() == null || subCommand.getPermission().isEmpty()) {
                 sender.sendMessage(subCommand.getSyntax() + " - " + subCommand.getDescription());
+            }else{
+                if(sender.hasPermission(subCommand.getPermission())) {
+                    sender.sendMessage(subCommand.getSyntax() + " - " + subCommand.getDescription());
+                }
+            }
         }
     }
 }

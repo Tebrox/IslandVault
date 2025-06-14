@@ -1,11 +1,9 @@
 package de.tebrox.islandVault.Menu;
 
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Manager.VaultManager;
-import de.tebrox.islandVault.Utils.IslandUtils;
-import de.tebrox.islandVault.Utils.ItemSortUtil;
-import de.tebrox.islandVault.Utils.LuckPermsUtils;
-import de.tebrox.islandVault.Utils.PlayerDataUtils;
+import de.tebrox.islandVault.Utils.*;
 import it.unimi.dsi.fastutil.Pair;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
@@ -186,21 +184,12 @@ public class VaultMenu extends PaginatedMenu {
                             break;
                         case 53:
                             if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
-                                if(inventoryClickEvent.isLeftClick()) {
-                                    IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).setAutoCollect(!IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).getAutoCollect());
-                                    player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-                                    reloadItems();
-                                }
-
-                                else if(inventoryClickEvent.isRightClick()) {
-                                    player.closeInventory();
-                                    player.playSound(player, Sound.ENTITY_EXPERIENCE_BOTTLE_THROW, 1, 1);
-                                    IslandUtils.showRadiusParticles(player, player.getLocation(), 5);
-                                }
-
+                                System.out.println("Class: " + getClass());
+                                playerMenuUtility.setData("previousMenu", VaultMenu.class);
+                                playerMenuUtility.setData("ownerUUID", ownerUUID);
+                                MenuManager.openMenu(SettingsMenu.class, playerMenuUtility.getOwner());
+                                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
                             }
-                            break;
-
                     }
                 }
 
@@ -306,8 +295,28 @@ public class VaultMenu extends PaginatedMenu {
         return item;
     }
 
+    public ItemStack makeSkullItem(String texture, String displayName, boolean hideTooltip, boolean isEnchanted, String... lore) {
+        ItemStack item = SkullCreator.fromBase64(texture);
+        ItemMeta itemMeta = item.getItemMeta();
+
+        itemMeta.setDisplayName(displayName);
+        itemMeta.setHideTooltip(hideTooltip);
+
+        if(isEnchanted) {
+            itemMeta.addEnchant(Enchantment.UNBREAKING, 1, true);
+            itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
+
+        //Automatically translate color codes provided
+        itemMeta.setLore(Arrays.stream(lore).map(ColorTranslator::translateColorCodes).collect(Collectors.toList()));
+        item.setItemMeta(itemMeta);
+
+        return item;
+    }
+
     @Override
     protected void addMenuBorder() {
+        String texture;
 
         inventory.setItem(45, makeSortItem(Material.COMPASS));
 
@@ -315,15 +324,18 @@ public class VaultMenu extends PaginatedMenu {
             // First page button
             inventory.setItem(47, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.firstPage")), false, true));
             // Previous page button
-            inventory.setItem(48, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.previousPage")), false, false));
+            texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTE4NWM5N2RiYjgzNTNkZTY1MjY5OGQyNGI2NDMyN2I3OTNhM2YzMmE5OGJlNjdiNzE5ZmJlZGFiMzVlIn19fQ==";
+            inventory.setItem(48, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.previousPage")), false, false));
+            //inventory.setItem(48, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.previousPage")), false, false));
         }else{
             inventory.setItem(47, FILLER_GLASS);
             inventory.setItem(48, FILLER_GLASS);
         }
 
         if(getCurrentPage() < getTotalPages()) {
+            texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzFjMGVkZWRkNzExNWZjMWIyM2Q1MWNlOTY2MzU4YjI3MTk1ZGFmMjZlYmI2ZTQ1YTY2YzM0YzY5YzM0MDkxIn19fQ==";
             // Next page button
-            inventory.setItem(50, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.nextPage")), false, false));
+            inventory.setItem(50, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.nextPage")), false, false));
             // Last page button
             inventory.setItem(51, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.lastPage")), false, true));
         }else{
@@ -332,8 +344,10 @@ public class VaultMenu extends PaginatedMenu {
         }
 
         // Close button
-        inventory.setItem(49, makeItem(Material.BARRIER, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.close")), false, false));
+        texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2FkNTMyYWRiYTliNGY5ZWZlYjQ3ZjRkNmI0ZmMxZWQyZTZkZTVjY2FhNzc5ZjU1NTk4ZTFlYWVjYWVlZjg5MiJ9fX0=";
+        inventory.setItem(49, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.close")), false, false));
 
+        /**
         int maxRadius = LuckPermsUtils.getMaxRadiusFromPermissions(IslandUtils.getIslandOwnerUUID(playerMenuUtility.getOwner()));
         if(maxRadius > 0) {
             String displayName = ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.item.radius.displayName"));
@@ -351,8 +365,14 @@ public class VaultMenu extends PaginatedMenu {
 
             inventory.setItem(53, makeItem(material, displayName, false, isEnabled, lore.toArray(new String[0])));
         }
+         **/
 
-        for (int i = 45; i < 54; i++) {
+        if(ownerUUID.equals(viewer.getUniqueId())) {
+            texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWQyNzM3YThkMTlhYjA3OWNlZjdhODI0ZjE0OTcxNTVkYWE5MjVlOGMxYzZiN2E2Yzc1NjVlOGJlMzAzOWZhMCJ9fX0=";
+            inventory.setItem(53, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.settings")), false, false));
+        }
+
+         for (int i = 45; i < 54; i++) {
             if (inventory.getItem(i) == null) {
                 inventory.setItem(i, FILLER_GLASS);
             }

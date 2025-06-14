@@ -36,6 +36,8 @@ public interface SubCommand {
      */
     PermissionDefault getPermissionDefault ();
 
+    default boolean isHidden(){return false;}
+
     /**
      * Returns the list of words to tab-complete on an index starting after the subCommand. (ex. /troll swap 0 1 | numbers representing the index of tabComplete)
      * @param index The index to get tab-complete for.

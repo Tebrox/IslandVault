@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.Manager;
 
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Utils.ConfigUpdater;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -9,6 +10,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -27,6 +29,29 @@ public class LanguageManager {
         this.langFolder = new File(plugin.getDataFolder(), "lang");
         copyDefaultLangFiles();
         loadLanguages();
+
+        updateAllLanguages();
+    }
+
+    public void updateAllLanguages() {
+        for (Map.Entry<Locale, YamlConfiguration> entry : languages.entrySet()) {
+            String langFileName = entry.getKey() + ".yml";
+            File langFolder = new File(plugin.getDataFolder(), "lang");
+            File langFile = new File(langFolder, langFileName);
+            ConfigUpdater updater = new ConfigUpdater(langFile);
+
+            try (InputStream defaultLangStream = getClass().getClassLoader().getResourceAsStream("lang/" + langFileName)) {
+                if (defaultLangStream == null) {
+                    System.err.println("Default language file not found in resources: " + langFileName);
+                    continue;
+                }
+                updater.update(defaultLangStream);
+                System.out.println("Language file updated: " + langFileName);
+            } catch (IOException e) {
+                System.err.println("Failed to update language file: " + langFileName);
+                e.printStackTrace();
+            }
+        }
     }
 
     private void copyDefaultLangFiles() {
@@ -77,6 +102,10 @@ public class LanguageManager {
         return playerLocales.getOrDefault(player.getUniqueId(), Locale.ENGLISH);
     }
 
+    public void removeLocale(Player player) {
+        playerLocales.remove(player);
+    }
+
     public PlaceholderRegistry getPlaceholders(Player player) {
         return playerPlaceholders.computeIfAbsent(player.getUniqueId(), id -> new PlaceholderRegistry());
     }
@@ -86,7 +115,15 @@ public class LanguageManager {
     }
 
     public String translate(Player player, String path, Map<String, String> extraPlaceholders, boolean useGlobal) {
+        Locale currentLocale = Locale.forLanguageTag(player.getLocale().replace('_', '-'));
+
+        // Gespeicherte Sprache prüfen
         Locale locale = getLocale(player);
+
+        if (!currentLocale.equals(locale)) {
+            setLocale(player, currentLocale); // Sprache aktualisieren
+        }
+
         YamlConfiguration config = languages.getOrDefault(locale, languages.get(Locale.ENGLISH));
         String raw = config.getString(path);
         if (raw == null) return "§cMissing lang: " + path;
@@ -108,7 +145,15 @@ public class LanguageManager {
     }
 
     public List<String> translateList(Player player, String path, Map<String, String> extraPlaceholders, boolean useGlobal) {
+        Locale currentLocale = Locale.forLanguageTag(player.getLocale().replace('_', '-'));
+
+        // Gespeicherte Sprache prüfen
         Locale locale = getLocale(player);
+
+        if (!currentLocale.equals(locale)) {
+            setLocale(player, currentLocale); // Sprache aktualisieren
+        }
+
         YamlConfiguration config = languages.getOrDefault(locale, languages.get(Locale.ENGLISH));
         List<String> list = config.getStringList(path);
         if (list.isEmpty()) {

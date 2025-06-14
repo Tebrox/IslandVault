@@ -45,12 +45,32 @@ public abstract class MainCommand implements TabExecutor {
             return false;
 
         /* Execute command if the player has permission, send no-permission message otherwise. */
+        if(subCommand.getPermission() == null) {
+            subCommand.perform(sender, Arrays.copyOfRange(args, 1, args.length));
+            return true;
+        }
+
+
         if (sender.hasPermission(subCommand.getPermission()))
             subCommand.perform(sender, Arrays.copyOfRange(args, 1, args.length));
         else
             sender.sendMessage(noPermMessage);
 
         return true;
+    }
+
+    public List<SubCommand> getVisibleSubCommands(CommandSender sender) {
+        return subCommands.stream()
+                // Filter: confirmremove und cancelremove sollen nicht in TabCompletion auftauchen
+                .filter(cmd -> {
+                    String name = cmd.getName().toLowerCase();
+                    if (name.equals("confirmremove") || name.equals("cancelremove")) {
+                        // Nur sichtbar, wenn jemand die SubCommand wirklich ausführen will, hier wollen wir es verstecken
+                        return false;
+                    }
+                    return true;
+                })
+                .toList();
     }
 
     @Override
@@ -64,9 +84,11 @@ public abstract class MainCommand implements TabExecutor {
         if (args.length == 1)
         {
             List<String> subCommandsTC = subCommands.stream()
-                    .filter(sc -> sc.getPermission() == null
-                            || sc.getPermission().trim().isEmpty()
-                            || sender.hasPermission(sc.getPermission()))
+                    .filter(sc -> !sc.isHidden() && (
+                            sc.getPermission() == null
+                                    || sc.getPermission().trim().isEmpty()
+                                    || sender.hasPermission(sc.getPermission()))
+                    )
                     .map(SubCommand::getName)
                     .collect(Collectors.toList());
 

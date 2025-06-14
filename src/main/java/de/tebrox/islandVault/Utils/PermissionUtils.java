@@ -16,11 +16,14 @@ public class PermissionUtils {
      * @return true, wenn die Permission neu registriert wurde; false wenn schon vorhanden
      */
     public static boolean registerPermission(String permissionName, String description, PermissionDefault defaultPerm) {
-        if (Bukkit.getPluginManager().getPermission(permissionName) == null) {
-            Permission permission = new Permission(permissionName, description, defaultPerm);
-            Bukkit.getPluginManager().addPermission(permission);
-            return true;
+        if(permissionName != null) {
+            if (Bukkit.getPluginManager().getPermission(permissionName) == null) {
+                Permission permission = new Permission(permissionName, description, defaultPerm);
+                Bukkit.getPluginManager().addPermission(permission);
+                return true;
+            }
         }
+
         return false;
     }
 }

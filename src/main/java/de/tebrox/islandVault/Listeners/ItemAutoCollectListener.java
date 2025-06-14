@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Manager.ItemGroupManager;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import org.bukkit.*;
 import org.bukkit.entity.Item;
@@ -40,7 +41,6 @@ public class ItemAutoCollectListener implements Listener {
         if (data.has(dropMarkerKey, PersistentDataType.INTEGER)) return;
 
         Location itemLocation = item.getLocation();
-        World world = itemLocation.getWorld();
 
         Optional<Island> optIsland = BentoBox.getInstance().getIslands().getIslandAt(itemLocation);
         if (optIsland.isEmpty()) return;
@@ -68,9 +68,20 @@ public class ItemAutoCollectListener implements Listener {
 
         ItemStack baseStack = item.getItemStack();
 
-        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, baseStack.getType())) return;
+        boolean groupPermission = false;
+        List<String> groups = ItemGroupManager.findGroupsWithMaterial(item.getItemStack().getType().toString());
+        if(!groups.isEmpty()) {
+            for(String g : groups) {
+                if(LuckPermsUtils.hasPermissionForGroup(ownerUUID, g)) {
+                    groupPermission = true;
+                    System.out.println("Test " + g);
+                    break;
+                }
+            }
+        }
 
-        // Suche nach ähnlichen Items im Radius von 1 Block zum Zusammenlegen
+        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, baseStack.getType()) && !groupPermission) return;
+
         List<Item> nearbyItems = item.getWorld().getNearbyEntities(item.getLocation(), 1, 1, 1).stream()
                 .filter(e -> e instanceof Item)
                 .map(e -> (Item) e)
@@ -89,12 +100,6 @@ public class ItemAutoCollectListener implements Listener {
         }
 
         IslandVault.getVaultManager().addItemToVault(baseStack.getType(), baseStack.getAmount(), ownerUUID, null);
-        Player owner = Bukkit.getPlayer(island.getOwner());
-
-        if(IslandVault.getVaultManager().ownerCanSeeAutocollectMessage(ownerUUID)) {
-            //String message = plugin.getLanguageManager().translate();
-            //.sendMessage(ChatColor.GREEN + "[IslandVault] " + plugin.getLanguageManager().translate(owner, "collectItemSuccessfull", Map.of("item", baseStack.getI18NDisplayName(), "amount", String.valueOf(baseStack.getAmount()))));
-        }
 
         item.remove();
     }

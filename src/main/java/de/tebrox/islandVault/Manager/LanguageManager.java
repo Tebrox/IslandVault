@@ -13,14 +13,17 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LanguageManager {
 
     private final Plugin plugin;
     private final File langFolder;
-    private final Map<Locale, YamlConfiguration> languages = new HashMap<>();
-    private final Map<UUID, Locale> playerLocales = new HashMap<>();
+    private final Map<String, YamlConfiguration> languageCache = new HashMap<>();
     private final Map<UUID, PlaceholderRegistry> playerPlaceholders = new HashMap<>();
+
+    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("%(\\w+)(:([^%]+))?%");
 
     public LanguageManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -56,29 +59,56 @@ public class LanguageManager {
     public void loadLanguages() {
         if (!langFolder.exists()) langFolder.mkdirs();
 
-        languages.clear();
+        languageCache.clear();
 
-        File[] files = langFolder.listFiles((dir, name) -> name.endsWith(".yml"));
-        if (files == null) return;
+        File[] files = langFolder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml"));
+        if (files == null || files.length == 0) {
+            plugin.getLogger().warning("Keine Sprachdateien im lang-Ordner gefunden: " + langFolder.getAbsolutePath());
+            return;
+        }
 
         for (File file : files) {
-            String name = file.getName().replace(".yml", "");
-            Locale locale = Locale.forLanguageTag(name.replace("_", "-"));
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-            languages.put(locale, config);
+            try {
+                YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                String langKey = file.getName().replace(".yml", "").toLowerCase(Locale.ROOT);
+                languageCache.put(langKey, config);
+                plugin.getLogger().info("Sprachdatei geladen: " + file.getName());
+            } catch (Exception e) {
+                plugin.getLogger().warning("Fehler beim Laden der Sprachdatei: " + file.getName());
+                e.printStackTrace();
+            }
         }
-    }
-
-    public void setLocale(Player player, Locale locale) {
-        playerLocales.put(player.getUniqueId(), locale);
-    }
-
-    public Locale getLocale(Player player) {
-        return playerLocales.getOrDefault(player.getUniqueId(), Locale.ENGLISH);
     }
 
     public PlaceholderRegistry getPlaceholders(Player player) {
         return playerPlaceholders.computeIfAbsent(player.getUniqueId(), id -> new PlaceholderRegistry());
+    }
+
+    private String replacePlaceholders(String text, Map<String, String> placeholders) {
+        Matcher matcher = PLACEHOLDER_PATTERN.matcher(text);
+        StringBuffer sb = new StringBuffer();
+
+        while (matcher.find()) {
+            String key = matcher.group(1);            // z.B. "amount"
+            String defaultValue = matcher.group(3);   // z.B. "64" oder null
+
+            String replacement = placeholders.get(key);
+            if (replacement == null) {
+                replacement = defaultValue != null ? defaultValue : "";
+            }
+
+            // Escape $ und \ für Matcher.appendReplacement
+            replacement = Matcher.quoteReplacement(replacement);
+
+            matcher.appendReplacement(sb, replacement);
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
+
+    private String getPlayerLanguageKey(Player player) {
+        String locale = player.getLocale();
+        return locale.split("_")[0].toLowerCase(Locale.ROOT);
     }
 
     public String translate(Player player, String path) {
@@ -86,20 +116,17 @@ public class LanguageManager {
     }
 
     public String translate(Player player, String path, Map<String, String> extraPlaceholders, boolean useGlobal) {
-        Locale locale = getLocale(player);
-        YamlConfiguration config = languages.getOrDefault(locale, languages.get(Locale.ENGLISH));
+        String locale = getPlayerLanguageKey(player);
+        YamlConfiguration config = languageCache.getOrDefault(locale, languageCache.get(Locale.ENGLISH));
         String raw = config.getString(path);
         if (raw == null) return "§cMissing lang: " + path;
 
-        if (useGlobal) {
-            Map<String, String> global = getPlaceholders(player).getAll();
-            for (var entry : global.entrySet()) {
-                raw = raw.replace("%" + entry.getKey() + "%", entry.getValue());
-            }
-        }
-        for (var entry : extraPlaceholders.entrySet()) {
-            raw = raw.replace("%" + entry.getKey() + "%", entry.getValue());
-        }
+        Map<String, String> combined = new HashMap<>();
+        if (useGlobal) combined.putAll(getPlaceholders(player).getAll());
+        combined.putAll(extraPlaceholders);
+
+        raw = replacePlaceholders(raw, combined);
+
         return ChatColor.translateAlternateColorCodes('&', raw);
     }
 
@@ -108,24 +135,21 @@ public class LanguageManager {
     }
 
     public List<String> translateList(Player player, String path, Map<String, String> extraPlaceholders, boolean useGlobal) {
-        Locale locale = getLocale(player);
-        YamlConfiguration config = languages.getOrDefault(locale, languages.get(Locale.ENGLISH));
+        String locale = getPlayerLanguageKey(player);
+        YamlConfiguration config = languageCache.getOrDefault(locale, languageCache.get(Locale.ENGLISH));
         List<String> list = config.getStringList(path);
         if (list.isEmpty()) {
             String single = config.getString(path);
             if (single != null) list = List.of(single);
         }
         List<String> result = new ArrayList<>();
+        Map<String, String> combined = new HashMap<>();
+
+        if (useGlobal) combined.putAll(getPlaceholders(player).getAll());
+        combined.putAll(extraPlaceholders);
+
         for (String line : list) {
-            if (useGlobal) {
-                Map<String, String> global = getPlaceholders(player).getAll();
-                for (var entry : global.entrySet()) {
-                    line = line.replace("%" + entry.getKey() + "%", entry.getValue());
-                }
-            }
-            for (var entry : extraPlaceholders.entrySet()) {
-                line = line.replace("%" + entry.getKey() + "%", entry.getValue());
-            }
+            line = replacePlaceholders(line, combined);
             result.add(ChatColor.translateAlternateColorCodes('&', line));
         }
         return result;

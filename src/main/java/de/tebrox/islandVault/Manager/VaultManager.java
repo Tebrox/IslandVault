@@ -1,5 +1,6 @@
 package de.tebrox.islandVault.Manager;
 
+import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Menu.VaultMenu;
@@ -160,11 +161,10 @@ public class VaultManager {
         }
 
         PlayerVaultUtils playerVaultUtils = getVaults().get(ownerUUID);
-
-
+        playerVaultUtils.clearUnlockedMaterial();
 
         List<Material> materialList = IslandVault.getItemManager().getMaterialList();
-        HashMap<String, List<String>> permissionGroups = IslandVault.getPermissionGroups();
+        Map<String, List<String>> permissionGroups = ItemGroupManager.getPermissionGroups();
 
         for(Map.Entry<String, List<String>> entry : permissionGroups.entrySet()) {
             if(LuckPermsUtils.hasPermissionForGroup(ownerUUID, entry.getKey())) {

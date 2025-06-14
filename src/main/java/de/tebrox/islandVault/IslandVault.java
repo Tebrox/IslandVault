@@ -4,11 +4,8 @@ import de.tebrox.islandVault.Commands.AdminCommand.VaultAdminMainCommand;
 import de.tebrox.islandVault.Commands.VaultMainCommand;
 import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Listeners.*;
+import de.tebrox.islandVault.Manager.*;
 import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
-import de.tebrox.islandVault.Manager.ItemManager;
-import de.tebrox.islandVault.Manager.LanguageManager;
-import de.tebrox.islandVault.Manager.MenuManager;
-import de.tebrox.islandVault.Manager.VaultManager;
 import de.tebrox.islandVault.Utils.*;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
@@ -37,7 +34,6 @@ public final class IslandVault extends JavaPlugin {
     private static ItemManager itemManager;
     private static VaultManager vaultManager;
     FileConfiguration config = getConfig();
-    private static HashMap<String, List<String>> permissionGroups = new HashMap<>();
     private static MainCommand mainCommand;
     private static MainCommand adminMainCommand;
     //private Logger logger;
@@ -98,8 +94,6 @@ public final class IslandVault extends JavaPlugin {
 
         registerCommandsAndEvents();
 
-        registerPermissions();
-
         loadAutoCollectPermissions();
 
         new BukkitRunnable() {
@@ -145,10 +139,6 @@ public final class IslandVault extends JavaPlugin {
         return vaultManager;
     }
 
-    public static HashMap<String, List<String>> getPermissionGroups() {
-        return permissionGroups;
-    }
-
     private void setupLogger() {
 
         Logger logger = getLogger(); // Verwende den Bukkit-Logger
@@ -177,17 +167,7 @@ public final class IslandVault extends JavaPlugin {
     private void registerPermissions() {
         ConfigurationSection section = config.getConfigurationSection(Permissions.GROUPS_CONFIG.getLabel());
 
-        for(String groupLabel : section.getKeys(false)) {
-            String permission = Permissions.GROUPS.getLabel() + groupLabel;
-            if(PermissionUtils.registerPermission(permission, "Itemgroup " + groupLabel, PermissionDefault.FALSE)) {
-                if(!permissionGroups.containsKey(groupLabel)) {
-                    List<String> permissions = getConfig().getStringList(Permissions.GROUPS_CONFIG.getLabel() + "." + groupLabel);
-                    permissionGroups.put(groupLabel, permissions);
-                    getLogger().log(Level.INFO, "Loaded group: " + groupLabel + " with entries " + permissions.toString());
-                }
-            }
-
-        }
+        ItemGroupManager.init(this);
 
         for(Material material : itemManager.getMaterialList()) {
             String permission = Permissions.VAULT.getLabel() + material.toString().toLowerCase();
@@ -233,21 +213,6 @@ public final class IslandVault extends JavaPlugin {
         }
     }
 
-    public void updateConfig() {
-        FileConfiguration config = getConfig();
-
-        // 3. Default-Config aus Resource laden (ohne zu speichern)
-        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(
-                new InputStreamReader(getResource("config.yml"), StandardCharsets.UTF_8)
-        );
-
-        // 4. Setze die Default-Config als Defaultwerte
-        config.setDefaults(defaultConfig);
-        config.options().copyDefaults(true);
-
-        saveConfig();
-    }
-
     public static MainCommand getMainCommand() {
         return mainCommand;
     }
@@ -255,12 +220,6 @@ public final class IslandVault extends JavaPlugin {
     public static MainCommand getAdminMainCommand() {
         return adminMainCommand;
     }
-
-    /**
-    public Logger getVaultLogger() {
-        return logger;
-    }
-     **/
 
     public Map<String, Integer> getRadiusPermissionMap() {
         return radiusPermissionMap;

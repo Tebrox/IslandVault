@@ -74,7 +74,6 @@ public class ItemAutoCollectListener implements Listener {
             for(String g : groups) {
                 if(LuckPermsUtils.hasPermissionForGroup(ownerUUID, g)) {
                     groupPermission = true;
-                    System.out.println("Test " + g);
                     break;
                 }
             }

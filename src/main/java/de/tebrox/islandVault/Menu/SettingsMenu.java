@@ -5,8 +5,6 @@ import de.tebrox.islandVault.Utils.BentoBoxRanks;
 import de.tebrox.islandVault.Utils.IslandUtils;
 import de.tebrox.islandVault.Utils.PlayerDataUtils;
 import de.tebrox.islandVault.VaultData;
-import me.kodysimpson.simpapi.exceptions.MenuManagerException;
-import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.Menu;
 import me.kodysimpson.simpapi.menu.MenuManager;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
@@ -15,21 +13,16 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import world.bentobox.bentobox.BentoBox;
-import world.bentobox.bentobox.database.objects.Island;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class SettingsMenu extends Menu {
 
     private VaultData vaultData;
-    private Island island;
     private Class<?> previousMenu = null;
 
     public SettingsMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
-        this.island = BentoBox.getInstance().getIslands().getIslandAt(playerMenuUtility.getOwner().getLocation()).orElse(null);
 
         if(playerMenuUtility.getData("vaultData") != null) {
             vaultData = (VaultData) playerMenuUtility.getData("vaultData");
@@ -56,7 +49,7 @@ public class SettingsMenu extends Menu {
     }
 
     @Override
-    public void handleMenu(InventoryClickEvent inventoryClickEvent) throws MenuManagerNotSetupException, MenuManagerException {
+    public void handleMenu(InventoryClickEvent inventoryClickEvent) {
         if(inventoryClickEvent.getWhoClicked() instanceof Player player) {
             ItemStack item = inventoryClickEvent.getCurrentItem();
 
@@ -66,7 +59,6 @@ public class SettingsMenu extends Menu {
 
             switch(item.getType()) {
                 case Material.ARROW:
-                    System.out.println("Menuclass: " + previousMenu);
                     Class<?> previousMenuClass;
                     previousMenuClass = previousMenu;
 
@@ -87,7 +79,6 @@ public class SettingsMenu extends Menu {
                         MenuManager.openMenu(menuClass, playerMenuUtility.getOwner());
                     } catch (Exception e) {
                         playerMenuUtility.getOwner().sendMessage("§cFehler beim Öffnen des Menüs.");
-                        e.printStackTrace();
                     }
                     break;
                 case Material.BOOK:
@@ -101,14 +92,13 @@ public class SettingsMenu extends Menu {
                         }
                     }
                     IslandVault.getVaultManager().saveVaultAsync(vaultData);
-                    reloadItems();
 
                     break;
                 case Material.HOPPER:
                     if(inventoryClickEvent.isLeftClick()) {
                         //IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).setAutoCollect(!IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).getAutoCollect());
+                        vaultData.setAutoCollect(!vaultData.isAutoCollect());
                         player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-                        reloadItems();
                     }
                     else if(inventoryClickEvent.isRightClick()) {
                         player.closeInventory();
@@ -118,11 +108,12 @@ public class SettingsMenu extends Menu {
                     break;
                 case Material.COMPASS:
                     PlayerDataUtils.saveShowOnlyItemsWithAmount(player, !PlayerDataUtils.loadShowOnlyItemsWithAmount(player));
-                    reloadItems();
+
                     break;
                 default:
                     break;
             }
+            reloadItems();
         }
     }
 
@@ -137,23 +128,25 @@ public class SettingsMenu extends Menu {
 
     private List<ItemStack> createButtonList() {
         List<ItemStack> list = new ArrayList<>();
-        UUID ownerUUID = vaultData.getOwnerUUID();
 
         if(previousMenu != null) {
             list.add(makeItem(Material.ARROW, "§cZurück"));
         }
 
-        if(ownerUUID != null && ownerUUID == player.getUniqueId()) {
+        if(vaultData.getOwnerUUID().equals(playerMenuUtility.getOwner().getUniqueId())) {
             list.add(makeItem(Material.HOPPER, "§aAuto-Collect Ein/Aus"));
         }
 
-        if(ownerUUID != null && ownerUUID == player.getUniqueId()) {
+        if(vaultData.getOwnerUUID().equals(playerMenuUtility.getOwner().getUniqueId())) {
             list.add(makeItem(Material.BOOK, "§aLagerberechtigung", createAccessLore().toArray(new String[0])));
         }
+
         List<String> tempList = new ArrayList<>();
         tempList.add("");
         tempList.add(String.valueOf(PlayerDataUtils.loadShowOnlyItemsWithAmount(player)));
         list.add(makeItem(Material.COMPASS, "Zeige nur Items mit Menge", tempList.toArray(new String[0])));
+
+        //TODO richtige lore
 
         return list;
     }
@@ -174,11 +167,13 @@ public class SettingsMenu extends Menu {
             }
         }
 
+
+        lore.add("§rKlicke auf das Buch,");
+        lore.add("§rum das Zugriffslevel zu ändern.");
         lore.add("");
-        lore.add("Klicke auf das Buch, um das Zugriffslevel zu ändern.");
-        lore.add("Linksklick: Zum nächsten Eintrag");
-        lore.add("Rechtsklick: Zum vorherigen Eintrag");
-        lore.add("Shiftklick: Zum Standardeintrag (Owner)");
+        lore.add("§rLinksklick: Zum nächsten Eintrag");
+        lore.add("§rRechtsklick: Zum vorherigen Eintrag");
+        lore.add("§rShiftklick: Zum Standardeintrag (Owner)");
 
         return lore;
     }
@@ -191,7 +186,7 @@ public class SettingsMenu extends Menu {
         int index = accessLevels.indexOf(currentLevel);
         if (index == -1) {
             // Optional: Zum ersten Element zurückfallen
-            return accessLevels.get(0);
+            return accessLevels.getFirst();
         }
 
         int size = accessLevels.size();

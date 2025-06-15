@@ -8,6 +8,7 @@ import de.tebrox.islandVault.Manager.*;
 import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
 import de.tebrox.islandVault.Utils.*;
 import de.tebrox.islandvault.api.*;
+import me.kodysimpson.simpapi.menu.MenuManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -88,6 +89,7 @@ public final class IslandVault extends JavaPlugin {
             getLogger().warning("Missing optional plugins: " + PluginDependencyChecker.getFormattedList(PluginDependencyChecker.getMissingOptionalPlugins()));
         }
 
+        BentoBoxRanks.loadRanks();
         loadAddons();
 
         MenuManager.setup(getServer(), this);
@@ -119,7 +121,7 @@ public final class IslandVault extends JavaPlugin {
                     Island island = islandsManager.getIsland(player.getWorld(), player.getUniqueId());
                     if (island != null) {
                         IslandTracker.setPlayerIsland(player.getUniqueId(), island);
-                        IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), Bukkit.getOfflinePlayer(island.getOwner()).getName());
+                        IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), island.getOwner());
                     } else {
                         IslandTracker.removePlayerIsland(player.getUniqueId());
                     }

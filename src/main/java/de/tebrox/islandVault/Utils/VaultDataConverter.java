@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.VaultData;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -24,8 +25,9 @@ public class VaultDataConverter {
         this.vaultFolder = new File(plugin.getDataFolder(), "vaults");
     }
 
-    public boolean convertIfOldFormat(String ownerName, String islandId, File yamlFile) {
+    public boolean convertIfOldFormat(UUID ownerUUID, String islandId, File yamlFile) {
         if (!yamlFile.exists()) return true;
+        String ownerName = Bukkit.getOfflinePlayer(ownerUUID).getName();
 
         IslandVault.getPlugin().getLogger().info("Migriere Vault ins das neue Format von " + ownerName + " (" + islandId + ")");
 
@@ -37,7 +39,7 @@ public class VaultDataConverter {
             Map<String, Object> rawItems = config.getConfigurationSection(key).getValues(false);
             if (rawItems == null) return false;
 
-            VaultData data = new VaultData(islandId, ownerName);
+            VaultData data = new VaultData(islandId, ownerUUID);
             for (Map.Entry<String, Object> entry : rawItems.entrySet()) {
                 Material material = Material.matchMaterial(entry.getKey());
                 if (material == null) continue;

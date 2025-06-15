@@ -3,6 +3,7 @@ package de.tebrox.islandVault.Menu;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Utils.BentoBoxRanks;
 import de.tebrox.islandVault.Utils.IslandUtils;
+import de.tebrox.islandVault.Utils.PlayerDataUtils;
 import de.tebrox.islandVault.VaultData;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
@@ -17,17 +18,26 @@ import org.bukkit.inventory.ItemStack;
 import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class SettingsMenu extends Menu {
 
     private VaultData vaultData;
     private Island island;
+    private Class<?> previousMenu = null;
 
     public SettingsMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
-        island = BentoBox.getInstance().getIslands().getIslandAt(player.getLocation()).orElse(null);
-        this.vaultData = IslandVault.getVaultManager().getCachedVault(island.getUniqueId());
+        this.island = BentoBox.getInstance().getIslands().getIslandAt(playerMenuUtility.getOwner().getLocation()).orElse(null);
+
+        if(playerMenuUtility.getData("vaultData") != null) {
+            vaultData = (VaultData) playerMenuUtility.getData("vaultData");
+        }
+
+        if(playerMenuUtility.getData("previousMenu") != null) {
+            previousMenu = (Class<?>) playerMenuUtility.getData("previousMenu");
+        }
     }
 
     @Override
@@ -56,16 +66,28 @@ public class SettingsMenu extends Menu {
 
             switch(item.getType()) {
                 case Material.ARROW:
-                    if(playerMenuUtility.getData("previousMenu") != null) {
-                        Class<? extends Menu> previous = (Class<? extends Menu>) playerMenuUtility.getData("previousMenu");
-                        System.out.println(getClass());
-                        System.out.println(previous);
+                    System.out.println("Menuclass: " + previousMenu);
+                    Class<?> previousMenuClass;
+                    previousMenuClass = previousMenu;
 
-                        if (previous != null) {
-                            MenuManager.openMenu(previous, playerMenuUtility.getOwner());
-                        } else {
-                            playerMenuUtility.getOwner().sendMessage("§cKein vorheriges Menü gefunden.");
-                        }
+                    if (previousMenuClass == null) {
+                        playerMenuUtility.getOwner().sendMessage("§cKein vorheriges Menü gefunden.");
+                        return;
+                    }
+
+                    if (!Menu.class.isAssignableFrom(previousMenuClass)) {
+                        playerMenuUtility.getOwner().sendMessage("§cGespeicherte Klasse ist kein Menü.");
+                        return;
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    Class<? extends Menu> menuClass = (Class<? extends Menu>) previousMenuClass;
+
+                    try {
+                        MenuManager.openMenu(menuClass, playerMenuUtility.getOwner());
+                    } catch (Exception e) {
+                        playerMenuUtility.getOwner().sendMessage("§cFehler beim Öffnen des Menüs.");
+                        e.printStackTrace();
                     }
                     break;
                 case Material.BOOK:
@@ -94,6 +116,10 @@ public class SettingsMenu extends Menu {
                         IslandUtils.showRadiusParticles(player, player.getLocation(), 5);
                     }
                     break;
+                case Material.COMPASS:
+                    PlayerDataUtils.saveShowOnlyItemsWithAmount(player, !PlayerDataUtils.loadShowOnlyItemsWithAmount(player));
+                    reloadItems();
+                    break;
                 default:
                     break;
             }
@@ -111,20 +137,23 @@ public class SettingsMenu extends Menu {
 
     private List<ItemStack> createButtonList() {
         List<ItemStack> list = new ArrayList<>();
+        UUID ownerUUID = vaultData.getOwnerUUID();
 
-        if(playerMenuUtility.getData("previousMenu") != null) {
+        if(previousMenu != null) {
             list.add(makeItem(Material.ARROW, "§cZurück"));
         }
 
-        if(playerMenuUtility.getData("ownerUUID") != null && playerMenuUtility.getData("ownerUUID") == player.getUniqueId()) {
+        if(ownerUUID != null && ownerUUID == player.getUniqueId()) {
             list.add(makeItem(Material.HOPPER, "§aAuto-Collect Ein/Aus"));
         }
 
-        if(playerMenuUtility.getData("ownerUUID") != null && playerMenuUtility.getData("ownerUUID") == player.getUniqueId()) {
+        if(ownerUUID != null && ownerUUID == player.getUniqueId()) {
             list.add(makeItem(Material.BOOK, "§aLagerberechtigung", createAccessLore().toArray(new String[0])));
         }
-
-        list.add(makeItem(Material.COMPASS, "Zeige nur Items mit Menge"));
+        List<String> tempList = new ArrayList<>();
+        tempList.add("");
+        tempList.add(String.valueOf(PlayerDataUtils.loadShowOnlyItemsWithAmount(player)));
+        list.add(makeItem(Material.COMPASS, "Zeige nur Items mit Menge", tempList.toArray(new String[0])));
 
         return list;
     }

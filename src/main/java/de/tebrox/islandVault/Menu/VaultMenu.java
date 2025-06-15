@@ -1,14 +1,12 @@
 package de.tebrox.islandVault.Menu;
 
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.ItemPermissionRule;
-import de.tebrox.islandVault.Manager.MenuManager;
-import de.tebrox.islandVault.Manager.VaultManager;
 import de.tebrox.islandVault.Utils.*;
 import de.tebrox.islandVault.VaultData;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
+import me.kodysimpson.simpapi.menu.MenuManager;
 import me.kodysimpson.simpapi.menu.PaginatedMenu;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
 import org.bukkit.Bukkit;
@@ -45,12 +43,12 @@ public class VaultMenu extends PaginatedMenu {
         super(playerMenuUtility);
         maxItemsPerPage = 45;
         this.viewer = playerMenuUtility.getOwner();
-        this.ownerUUID = IslandUtils.getIslandOwnerUUID(playerMenuUtility.getOwner());
 
         island = BentoBox.getInstance().getIslands().getIslandAt(viewer.getLocation()).orElse(null);
         IslandVault.getVaultSyncManager().registerViewer(island.getUniqueId(), viewer, this);
 
         this.vaultData = IslandVault.getVaultManager().getCachedVault(island.getUniqueId());
+        this.ownerUUID = vaultData.getOwnerUUID();
 
     }
 
@@ -190,10 +188,9 @@ public class VaultMenu extends PaginatedMenu {
                             break;
                         case 53:
                             if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
-                                System.out.println("Class: " + getClass());
-                                playerMenuUtility.setData("previousMenu", VaultMenu.class);
-                                playerMenuUtility.setData("ownerUUID", ownerUUID);
-                                MenuManager.openMenu(SettingsMenu.class, playerMenuUtility.getOwner());
+                                MenuManager.getPlayerMenuUtility(player).setData("previousMenu", VaultMenu.class);
+                                MenuManager.getPlayerMenuUtility(player).setData("vaultData", vaultData);
+                                MenuManager.openMenu(SettingsMenu.class, player);
                                 player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
                             }
                     }

@@ -3,7 +3,6 @@ package de.tebrox.islandVault.Listeners;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.IslandTracker;
 import de.tebrox.islandVault.Manager.LanguageManager;
-import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Utils.IslandUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -36,7 +35,7 @@ public class IslandListener implements Listener {
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {
             if(IslandTracker.isIslandEmpty(island.getUniqueId())) {
-                IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), Bukkit.getOfflinePlayer(island.getOwner()).getName());
+                IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), island.getOwner());
             }
             IslandTracker.setPlayerIsland(player.getUniqueId(), island);
         } else {
@@ -62,14 +61,13 @@ public class IslandListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
-        MenuManager.addPlayerMenuUtilityMap(player);
         LanguageManager.PlaceholderRegistry placeholderRegistry = IslandVault.getLanguageManager().getPlaceholders(player);
         placeholderRegistry.set("player", player.getName());
 
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {
             if(IslandTracker.isIslandEmpty(island.getUniqueId())) {
-                IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), Bukkit.getOfflinePlayer(island.getOwner()).getName());
+                IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), island.getOwner());
             }
             IslandTracker.setPlayerIsland(player.getUniqueId(), island);
         } else {
@@ -80,8 +78,6 @@ public class IslandListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-
-        MenuManager.removeFromPlayerMenuUtilityMap(player);
 
         Island island = IslandTracker.getPlayerIsland(player.getUniqueId());
         if (island != null) {

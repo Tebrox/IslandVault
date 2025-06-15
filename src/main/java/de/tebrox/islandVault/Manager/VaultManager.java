@@ -40,14 +40,14 @@ public class VaultManager {
                 .create();
     }
 
-    public CompletableFuture<VaultData> getVaultAsync(String islandId, String ownerName) {
+    public CompletableFuture<VaultData> getVaultAsync(String islandId, UUID ownerUUID) {
         // Cache-Hit
         if (cache.containsKey(islandId)) {
             return CompletableFuture.completedFuture(cache.get(islandId));
         }
 
         // Async-Laden oder Neu-Erstellen
-        return CompletableFuture.supplyAsync(() -> loadOrCreateVault(islandId, ownerName));
+        return CompletableFuture.supplyAsync(() -> loadOrCreateVault(islandId, ownerUUID));
     }
 
     public void saveVaultAsync(String islandId, String ownerName) {
@@ -61,15 +61,15 @@ public class VaultManager {
         new BukkitRunnable() {
             @Override
             public void run() {
-                saveVaultToFile(data.getIslandId(), data.getOwnerName(), data);
+                saveVaultToFile(data.getIslandId(), data.getOwnerUUID(), data);
             }
         }.runTaskAsynchronously(plugin);
     }
 
-    public void unloadVault(String islandId, String ownerName) {
+    public void unloadVault(String islandId, UUID ownerUUID) {
         VaultData data = cache.remove(islandId);
         if (data != null) {
-            saveVaultToFile(islandId, ownerName, data);
+            saveVaultToFile(islandId, ownerUUID, data);
         }
     }
 
@@ -77,22 +77,20 @@ public class VaultManager {
         for (Map.Entry<String, VaultData> entry : cache.entrySet()) {
             String islandId = entry.getKey();
             VaultData data = entry.getValue();
-            String owner = resolveOwnerName(islandId); // Anpassen
-            saveVaultToFile(islandId, owner, data);
+            saveVaultToFile(islandId, data.getOwnerUUID(), data);
         }
         cache.clear();
     }
 
-    public VaultData loadOrCreateVault(String islandId, String ownerName) {
-        System.out.println("TEST: " + islandId + " / " + ownerName);
-        File jsonFile = getJsonFile(ownerName, islandId);
-        File yamlFile = getYamlFile(ownerName, islandId);
+    public VaultData loadOrCreateVault(String islandId, UUID ownerUUID) {
+        File jsonFile = getJsonFile(ownerUUID, islandId);
+        File yamlFile = getYamlFile(ownerUUID, islandId);
 
         // Konvertieren, falls YAML vorhanden
         if (yamlFile.exists() && !jsonFile.exists()) {
-            boolean converted = new VaultDataConverter(plugin).convertIfOldFormat(ownerName, islandId, yamlFile);
+            boolean converted = new VaultDataConverter(plugin).convertIfOldFormat(ownerUUID, islandId, yamlFile);
             if (!converted) {
-                plugin.getLogger().warning("Migration fehlgeschlagen für Vault von " + ownerName + " (" + islandId + ")");
+                plugin.getLogger().warning("Migration fehlgeschlagen für Vault von " + Bukkit.getOfflinePlayer(ownerUUID).getName() + " (" + islandId + ")");
                 return null; // <-- WICHTIG: Fehler zurückgeben
             }
         }
@@ -105,21 +103,21 @@ public class VaultManager {
                         .registerTypeAdapter(new TypeToken<Map<ItemStackKey, Integer>>(){}.getType(), new ItemStackKeyMapAdapter())
                         .create();
                 data = gson.fromJson(reader, VaultData.class);
-                if (data == null) data = new VaultData(islandId, ownerName);
+                if (data == null) data = new VaultData(islandId, ownerUUID);
             } catch (IOException ex) {
                 plugin.getLogger().warning("Fehler beim Laden von " + jsonFile.getName() + ": " + ex.getMessage());
                 return null;
             }
         } else {
-            data = new VaultData(islandId, ownerName);
+            data = new VaultData(islandId, ownerUUID);
         }
 
         cache.put(islandId, data);
         return data;
     }
 
-    private void saveVaultToFile(String islandId, String ownerName, VaultData data) {
-        File jsonFile = getJsonFile(ownerName, islandId);
+    private void saveVaultToFile(String islandId, UUID ownerUUID, VaultData data) {
+        File jsonFile = getJsonFile(ownerUUID, islandId);
         try (Writer writer = new FileWriter(jsonFile)) {
             Gson gson = new GsonBuilder()
                     .registerTypeAdapter(new TypeToken<Map<ItemStackKey, Integer>>(){}.getType(), new ItemStackKeyMapAdapter())
@@ -131,11 +129,13 @@ public class VaultManager {
         }
     }
 
-    private File getJsonFile(String owner, String islandId) {
+    private File getJsonFile(UUID ownerUUID, String islandId) {
+        String owner = Bukkit.getOfflinePlayer(ownerUUID).getName();
         return new File(vaultFolder, owner + "_" + islandId + ".json");
     }
 
-    private File getYamlFile(String owner, String islandId) {
+    private File getYamlFile(UUID ownerUUID, String islandId) {
+        String owner = Bukkit.getOfflinePlayer(ownerUUID).getName();
         return new File(vaultFolder, Bukkit.getOfflinePlayer(owner).getUniqueId() + ".yml");
 
     }

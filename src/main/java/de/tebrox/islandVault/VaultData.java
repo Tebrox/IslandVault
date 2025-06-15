@@ -4,6 +4,7 @@ import de.tebrox.islandVault.Utils.BentoBoxRanks;
 import de.tebrox.islandVault.Utils.ItemNameTranslator;
 import de.tebrox.islandVault.Utils.ItemStackKey;
 import de.tebrox.islandVault.Utils.PlayerDataUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -18,22 +19,24 @@ public class VaultData {
 
     private final String islandId;
     private final String ownerName;
+    private final UUID ownerUUID;
     private boolean autoCollect;
     private int accessLevel;
 
     private final Map<ItemStackKey, Integer> items = new ConcurrentHashMap<>();
 
-    public VaultData(String islandId, String ownerName) {
+    public VaultData(String islandId, UUID ownerUUID) {
         this.islandId = islandId;
-        this.ownerName = ownerName;
+        this.ownerName = Bukkit.getOfflinePlayer(ownerUUID).getName();
+        this.ownerUUID = ownerUUID;
         this.autoCollect = false;
         this.accessLevel = BentoBoxRanks.getId("owner");
-        System.out.println("Rank: " + accessLevel);
     }
 
     public String getIslandId() { return islandId; }
 
     public String getOwnerName() { return ownerName; }
+    public UUID getOwnerUUID() { return ownerUUID; }
 
     public Map<ItemStackKey, Integer> getItems() { return items; }
 

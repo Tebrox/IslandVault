@@ -3,15 +3,14 @@ package de.tebrox.islandVault;
 import de.tebrox.islandVault.Utils.BentoBoxRanks;
 import de.tebrox.islandVault.Utils.ItemNameTranslator;
 import de.tebrox.islandVault.Utils.ItemStackKey;
+import de.tebrox.islandVault.Utils.PlayerDataUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import world.bentobox.bentobox.database.objects.Island;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -29,6 +28,7 @@ public class VaultData {
         this.ownerName = ownerName;
         this.autoCollect = false;
         this.accessLevel = BentoBoxRanks.getId("owner");
+        System.out.println("Rank: " + accessLevel);
     }
 
     public String getIslandId() { return islandId; }
@@ -97,15 +97,26 @@ public class VaultData {
 
     public List<ItemStack> filterItems(Player player, @Nullable String searchQuery) {
         if (searchQuery == null || searchQuery.trim().isEmpty()) {
-            // Alle Items zurückgeben (nur Keys in ItemStacks umwandeln)
-            return items.keySet().stream()
+            Map<ItemStackKey, Integer> combined = items;
+
+            if(!PlayerDataUtils.loadShowOnlyItemsWithAmount(player)) {
+                combined = getCombinedItemMap(items, IslandVault.getPermissionItemRegistry().getWhitelistedItems());
+            }
+
+            return combined.keySet().stream()
                     .map(ItemStackKey::toItemStack)
                     .collect(Collectors.toList());
         }
 
         String lower = searchQuery.toLowerCase(Locale.ROOT);
 
-        return items.keySet().stream()
+        Map<ItemStackKey, Integer> combined = items;
+
+        if(!PlayerDataUtils.loadShowOnlyItemsWithAmount(player)) {
+            combined = getCombinedItemMap(items, IslandVault.getPermissionItemRegistry().getWhitelistedItems());
+        }
+
+        return combined.keySet().stream()
                 .map(ItemStackKey::toItemStack)
                 .filter(item -> {
                     if (item == null || item.getType().isAir()) return false;
@@ -167,5 +178,17 @@ public class VaultData {
         ItemStack item = Base64ItemSerializer.deserialize(key.toString());
         item.setAmount(takeAmount);
         return item;
+    }
+
+    private Map<ItemStackKey, Integer> getCombinedItemMap(Map<ItemStackKey, Integer> items, Map<String, ItemPermissionRule> permissionItemMap) {
+        Map<ItemStackKey, Integer> combined = new HashMap<>(items);
+
+        permissionItemMap.values().stream()
+                .filter(rule -> rule.getType() == ItemPermissionRule.RuleType.WHITELIST)
+                .map(ItemPermissionRule::getKey)
+                .filter(key -> !combined.containsKey(key)) // Nur hinzufügen, wenn noch nicht vorhanden
+                .forEach(key -> combined.put(key, 0));     // Menge 0 als Platzhalter
+
+        return combined;
     }
 }

@@ -1,5 +1,7 @@
 package de.tebrox.islandVault.Utils;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import org.bukkit.Bukkit;
@@ -72,13 +74,21 @@ public class SkullCreator {
         ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) skull.getItemMeta();
 
-        GameProfile profile = new GameProfile(UUID.randomUUID(), "Skull");
-        profile.getProperties().put("textures", new Property("textures", base64));
-
         try {
-            Field profileField = meta.getClass().getDeclaredField("profile");
-            profileField.setAccessible(true);
-            profileField.set(meta, profile);
+            if (isPaper()) {
+                // Für Paper oder Forks mit PlayerProfile API
+                PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                profile.getProperties().add(new ProfileProperty("textures", base64));
+                meta.setPlayerProfile(profile);
+            } else {
+                // Für Spigot & andere: Reflektion
+                GameProfile profile = new GameProfile(UUID.randomUUID(), null);
+                profile.getProperties().put("textures", new Property("textures", base64));
+
+                Field profileField = meta.getClass().getDeclaredField("profile");
+                profileField.setAccessible(true);
+                profileField.set(meta, profile);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -92,5 +102,14 @@ public class SkullCreator {
      */
     public static void clearCache() {
         cache.clear();
+    }
+
+    private static boolean isPaper() {
+        try {
+            Class.forName("com.destroystokyo.paper.profile.PlayerProfile");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 }

@@ -143,4 +143,11 @@ public class PermissionItemRegistry {
         return permissionItemMap.values().stream()
                 .anyMatch(rule -> rule.getKey().equals(key) && rule.getType() == ItemPermissionRule.RuleType.BLACKLIST);
     }
+
+    public Set<ItemStackKey> getWhitelistedItemKeys() {
+        return permissionItemMap.values().stream()
+                .filter(rule -> rule.getType() == ItemPermissionRule.RuleType.WHITELIST)
+                .map(ItemPermissionRule::getKey)
+                .collect(Collectors.toUnmodifiableSet());
+    }
 }

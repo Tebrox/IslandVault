@@ -8,6 +8,16 @@ import org.bukkit.persistence.PersistentDataType;
 
 public class PlayerDataUtils {
 
+    public static void saveShowOnlyItemsWithAmount(Player player, boolean showWithAmount) {
+        PersistentDataContainer container = player.getPersistentDataContainer();
+        container.set(getShowItemsWithAmountKey(), PersistentDataType.BOOLEAN, showWithAmount);
+    }
+
+    public static boolean loadShowOnlyItemsWithAmount(Player player) {
+        PersistentDataContainer container = player.getPersistentDataContainer();
+        return container.getOrDefault(getShowItemsWithAmountKey(), PersistentDataType.BOOLEAN, false);
+    }
+
     public static void saveSortSettings(Player player, ItemSortUtil.SortOption option, ItemSortUtil.SortDirection direction) {
         PersistentDataContainer container = player.getPersistentDataContainer();
 
@@ -44,8 +54,7 @@ public class PlayerDataUtils {
     public static NamespacedKey getSortOptionKey() {
         return new NamespacedKey(IslandVault.getPlugin(), "sort_option");
     }
+    public static NamespacedKey getSortDirectionKey() { return new NamespacedKey(IslandVault.getPlugin(), "sort_direction"); }
 
-    public static NamespacedKey getSortDirectionKey() {
-        return new NamespacedKey(IslandVault.getPlugin(), "sort_direction");
-    }
+    public static NamespacedKey getShowItemsWithAmountKey() { return new NamespacedKey(IslandVault.getPlugin(), "showItemsWithAmount"); }
 }

@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.Menu;
 
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.ItemPermissionRule;
 import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Manager.VaultManager;
 import de.tebrox.islandVault.Utils.*;
@@ -73,7 +74,6 @@ public class VaultMenu extends PaginatedMenu {
 
         currentOption = PlayerDataUtils.loadSortOption(playerMenuUtility.getOwner());
         currentDirection = PlayerDataUtils.loadSortDirection(playerMenuUtility.getOwner());
-
         List<ItemStack> filteredItems = vaultData.filterItems(playerMenuUtility.getOwner(), searchQuery);
 
         ItemSortUtil.sortItems(filteredItems, vaultData, player, currentOption, currentDirection);
@@ -88,7 +88,6 @@ public class VaultMenu extends PaginatedMenu {
         }
         return filteredItems;
     }
-
     @Override
     public @Nullable HashMap<Integer, ItemStack> getCustomMenuBorderItems() {
         return null;

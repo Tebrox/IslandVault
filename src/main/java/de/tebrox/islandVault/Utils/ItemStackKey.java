@@ -19,6 +19,7 @@ public class ItemStackKey {
 
     public static ItemStackKey of(ItemStack stack) {
         if (stack == null || stack.getType().isAir()) return new ItemStackKey("AIR");
+        stack.setAmount(1);
         return new ItemStackKey(Base64ItemSerializer.serialize(stack));
     }
 
@@ -43,5 +44,9 @@ public class ItemStackKey {
     public ItemStack toItemStack() {
         if ("AIR".equals(key)) return new ItemStack(Material.AIR);
         return Base64ItemSerializer.deserialize(key);
+    }
+
+    public static ItemStackKey fromString(String key) {
+        return new ItemStackKey(key);
     }
 }

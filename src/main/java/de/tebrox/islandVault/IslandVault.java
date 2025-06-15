@@ -7,8 +7,8 @@ import de.tebrox.islandVault.Listeners.*;
 import de.tebrox.islandVault.Manager.*;
 import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
 import de.tebrox.islandVault.Utils.*;
+import de.tebrox.islandvault.api.*;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -22,8 +22,11 @@ import world.bentobox.bentobox.database.objects.Island;
 import world.bentobox.bentobox.managers.IslandsManager;
 
 import java.io.*;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.*;
 import java.util.logging.Formatter;
 
@@ -84,6 +87,8 @@ public final class IslandVault extends JavaPlugin {
         if (!PluginDependencyChecker.getMissingOptionalPlugins().isEmpty()) {
             getLogger().warning("Missing optional plugins: " + PluginDependencyChecker.getFormattedList(PluginDependencyChecker.getMissingOptionalPlugins()));
         }
+
+        loadAddons();
 
         MenuManager.setup(getServer(), this);
 
@@ -171,6 +176,13 @@ public final class IslandVault extends JavaPlugin {
                 }
             });
         }
+        getLogger().setParent(logger);
+    }
+
+    private void loadAddons() {
+        for (AddonProvider provider : AddonRegistry.getAllProviders()) {
+            getLogger().info("Addon geladen: " + provider + " mit " + provider.getAllItems().size() + " Items.");
+        }
     }
 
     private void registerPermissions() {
@@ -226,12 +238,6 @@ public final class IslandVault extends JavaPlugin {
     public static MainCommand getAdminMainCommand() {
         return adminMainCommand;
     }
-
-    /**
-    public Logger getVaultLogger() {
-        return logger;
-    }
-     **/
 
     public Map<String, Integer> getRadiusPermissionMap() {
         return radiusPermissionMap;

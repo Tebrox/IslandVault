@@ -1,7 +1,9 @@
 package de.tebrox.islandVault.Utils;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.VaultData;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -25,9 +27,11 @@ public class VaultDataConverter {
     public boolean convertIfOldFormat(String ownerName, String islandId, File yamlFile) {
         if (!yamlFile.exists()) return true;
 
+        IslandVault.getPlugin().getLogger().info("Migriere Vault ins das neue Format von " + ownerName + " (" + islandId + ")");
+
         try {
             YamlConfiguration config = YamlConfiguration.loadConfiguration(yamlFile);
-            String key = "items";
+            String key = "Inventory";
             if (!config.contains(key)) return false;
 
             Map<String, Object> rawItems = config.getConfigurationSection(key).getValues(false);
@@ -45,9 +49,20 @@ public class VaultDataConverter {
                 data.add(stack, amount);
             }
 
+            if(config.contains("Player.Autocollect")) {
+                data.setAutoCollect(config.getBoolean("Player.Autocollect"));
+            }
+
+            if(config.contains("Player.AccessLevel")) {
+                data.setAccessLevel(config.getInt("AccessLevel"));
+            }
+
             File jsonFile = new File(vaultFolder, ownerName + "_" + islandId + ".json");
             try (Writer writer = new FileWriter(jsonFile)) {
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                Gson gson = new GsonBuilder()
+                        .registerTypeAdapter(new TypeToken<Map<ItemStackKey, Integer>>(){}.getType(), new ItemStackKeyMapAdapter())
+                        .setPrettyPrinting()
+                        .create();
                 gson.toJson(data, writer);
             }
 

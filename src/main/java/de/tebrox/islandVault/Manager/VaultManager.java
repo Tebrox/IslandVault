@@ -1,8 +1,11 @@
 package de.tebrox.islandVault.Manager;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Utils.ItemStackKey;
+import de.tebrox.islandVault.Utils.ItemStackKeyMapAdapter;
 import de.tebrox.islandVault.Utils.VaultDataConverter;
 import de.tebrox.islandVault.VaultData;
 import org.bukkit.Bukkit;
@@ -49,12 +52,16 @@ public class VaultManager {
 
     public void saveVaultAsync(String islandId, String ownerName) {
         VaultData data = cache.get(islandId);
+        saveVaultAsync(data);
+    }
+
+    public void saveVaultAsync(VaultData data) {
         if (data == null) return;
 
         new BukkitRunnable() {
             @Override
             public void run() {
-                saveVaultToFile(islandId, ownerName, data);
+                saveVaultToFile(data.getIslandId(), data.getOwnerName(), data);
             }
         }.runTaskAsynchronously(plugin);
     }
@@ -77,6 +84,7 @@ public class VaultManager {
     }
 
     public VaultData loadOrCreateVault(String islandId, String ownerName) {
+        System.out.println("TEST: " + islandId + " / " + ownerName);
         File jsonFile = getJsonFile(ownerName, islandId);
         File yamlFile = getYamlFile(ownerName, islandId);
 
@@ -93,6 +101,9 @@ public class VaultManager {
         VaultData data;
         if (jsonFile.exists()) {
             try (Reader reader = new FileReader(jsonFile)) {
+                Gson gson = new GsonBuilder()
+                        .registerTypeAdapter(new TypeToken<Map<ItemStackKey, Integer>>(){}.getType(), new ItemStackKeyMapAdapter())
+                        .create();
                 data = gson.fromJson(reader, VaultData.class);
                 if (data == null) data = new VaultData(islandId, ownerName);
             } catch (IOException ex) {
@@ -108,11 +119,15 @@ public class VaultManager {
     }
 
     private void saveVaultToFile(String islandId, String ownerName, VaultData data) {
-        File file = getJsonFile(ownerName, islandId);
-        try (Writer writer = new FileWriter(file)) {
+        File jsonFile = getJsonFile(ownerName, islandId);
+        try (Writer writer = new FileWriter(jsonFile)) {
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(new TypeToken<Map<ItemStackKey, Integer>>(){}.getType(), new ItemStackKeyMapAdapter())
+                    .setPrettyPrinting()
+                    .create();
             gson.toJson(data, writer);
         } catch (IOException ex) {
-            plugin.getLogger().severe("Konnte Vault " + file.getName() + " nicht speichern: " + ex.getMessage());
+            plugin.getLogger().severe("Konnte Vault " + jsonFile.getName() + " nicht speichern: " + ex.getMessage());
         }
     }
 
@@ -121,7 +136,8 @@ public class VaultManager {
     }
 
     private File getYamlFile(String owner, String islandId) {
-        return new File(vaultFolder, owner + "_" + islandId + ".yml");
+        return new File(vaultFolder, Bukkit.getOfflinePlayer(owner).getUniqueId() + ".yml");
+
     }
 
     private String resolveOwnerName(String islandId) {

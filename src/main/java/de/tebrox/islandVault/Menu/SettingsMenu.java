@@ -3,6 +3,7 @@ package de.tebrox.islandVault.Menu;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Utils.BentoBoxRanks;
 import de.tebrox.islandVault.Utils.IslandUtils;
+import de.tebrox.islandVault.VaultData;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.Menu;
@@ -13,16 +14,20 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import world.bentobox.bentobox.BentoBox;
+import world.bentobox.bentobox.database.objects.Island;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class SettingsMenu extends Menu {
 
+    private VaultData vaultData;
+    private Island island;
+
     public SettingsMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
+        island = BentoBox.getInstance().getIslands().getIslandAt(player.getLocation()).orElse(null);
+        this.vaultData = IslandVault.getVaultManager().getCachedVault(island.getUniqueId());
     }
 
     @Override
@@ -63,7 +68,18 @@ public class SettingsMenu extends Menu {
                         }
                     }
                     break;
-                case Material.OAK_SIGN:
+                case Material.BOOK:
+                    if(inventoryClickEvent.isShiftClick()) {
+                        vaultData.setAccessLevel(BentoBoxRanks.getId("owner"));
+                    }else{
+                        if(inventoryClickEvent.isLeftClick()) {
+                            vaultData.setAccessLevel(getNextAccessLevel(vaultData.getAccessLevel(), BentoBoxRanks.getSortedRoleIds(), true));
+                        }else if(inventoryClickEvent.isRightClick()) {
+                            vaultData.setAccessLevel(getNextAccessLevel(vaultData.getAccessLevel(), BentoBoxRanks.getSortedRoleIds(), false));
+                        }
+                    }
+                    IslandVault.getVaultManager().saveVaultAsync(vaultData);
+                    reloadItems();
 
                     break;
                 case Material.HOPPER:
@@ -87,6 +103,10 @@ public class SettingsMenu extends Menu {
     @Override
     public void setMenuItems() {
         List<ItemStack> buttons = createButtonList();
+
+        for(int i = 0; i < buttons.size(); i++) {
+            inventory.setItem(i, buttons.get(i));
+        }
     }
 
     private List<ItemStack> createButtonList() {
@@ -101,22 +121,21 @@ public class SettingsMenu extends Menu {
         }
 
         if(playerMenuUtility.getData("ownerUUID") != null && playerMenuUtility.getData("ownerUUID") == player.getUniqueId()) {
-            list.add(makeItem(Material.OAK_SIGN, "§aLagerberechtigung"));
+            list.add(makeItem(Material.BOOK, "§aLagerberechtigung", createAccessLore().toArray(new String[0])));
         }
+
+        list.add(makeItem(Material.COMPASS, "Zeige nur Items mit Menge"));
 
         return list;
     }
 
     private List<String> createAccessLore() {
         List<String> lore = new ArrayList<>();
-        //int currentLevel = IslandVault.getVaultManager().getAccessLevel(playerMenuUtility.getOwner().getUniqueId());
-        int currentLevel = BentoBoxRanks.getId("owner");
-
+        int currentLevel = vaultData.getAccessLevel();
 
         List<Integer> ACCESS_LEVELS = BentoBoxRanks.getSortedRoleIds();
 
-        for (int i = 0; i < ACCESS_LEVELS.size(); i++) {
-            int level = ACCESS_LEVELS.get(i);
+        for (int level : ACCESS_LEVELS) {
             String name = BentoBoxRanks.getName(level);
 
             if (level <= currentLevel) {
@@ -128,7 +147,34 @@ public class SettingsMenu extends Menu {
 
         lore.add("");
         lore.add("Klicke auf das Buch, um das Zugriffslevel zu ändern.");
+        lore.add("Linksklick: Zum nächsten Eintrag");
+        lore.add("Rechtsklick: Zum vorherigen Eintrag");
+        lore.add("Shiftklick: Zum Standardeintrag (Owner)");
 
         return lore;
+    }
+
+    public static int getNextAccessLevel(int currentLevel, List<Integer> accessLevels, boolean forward) {
+        if (accessLevels.isEmpty()) {
+            throw new IllegalArgumentException("Liste der Levels ist leer.");
+        }
+
+        int index = accessLevels.indexOf(currentLevel);
+        if (index == -1) {
+            // Optional: Zum ersten Element zurückfallen
+            return accessLevels.get(0);
+        }
+
+        int size = accessLevels.size();
+        int nextIndex;
+
+        if (forward) {
+            nextIndex = (index + 1) % size;
+        } else {
+            nextIndex = (index - 1 + size) % size;
+            // Das +size stellt sicher, dass der Index nie negativ wird
+        }
+
+        return accessLevels.get(nextIndex);
     }
 }

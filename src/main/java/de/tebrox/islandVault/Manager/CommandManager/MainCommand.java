@@ -103,7 +103,7 @@ public abstract class MainCommand implements TabExecutor {
             return null;
 
         /* Gets the tabCompletion from the subCommand. */
-        List<String> subCommandTB = subCommand.getTabCompletion(args.length - 2, args);
+        List<String> subCommandTB = subCommand.getTabCompletion(sender,args.length - 2, args);
 
         return getMatchingStrings(subCommandTB, args[args.length - 1], argumentMatcher);
     }

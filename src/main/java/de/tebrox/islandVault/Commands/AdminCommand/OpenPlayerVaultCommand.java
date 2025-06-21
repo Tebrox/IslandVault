@@ -47,7 +47,7 @@ public class OpenPlayerVaultCommand implements SubCommand {
     }
 
     @Override
-    public List<String> getTabCompletion(int index, String[] args) {
+    public List<String> getTabCompletion(CommandSender sender, int index, String[] args) {
         if(index == 0) {
             List<String> players = new ArrayList<>();
             for(VaultData data : IslandVault.getVaultManager().getCache().values()) {

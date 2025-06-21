@@ -3,6 +3,8 @@ package de.tebrox.islandVault.Commands;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Listeners.RegionListener;
 import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
+import de.tebrox.islandVault.Manager.IslandTracker;
+import de.tebrox.islandVault.Manager.RegionManager;
 import de.tebrox.islandVault.Region.Region;
 import de.tebrox.islandVault.Region.RegionSession;
 import net.kyori.adventure.text.Component;
@@ -10,6 +12,9 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import static net.kyori.adventure.text.Component.text;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.command.CommandSender;
@@ -17,8 +22,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 public class RegionCommand implements SubCommand {
     @Override
@@ -47,12 +53,26 @@ public class RegionCommand implements SubCommand {
     }
 
     @Override
-    public List<String> getTabCompletion(int index, String[] args) {
+    public List<String> getTabCompletion(CommandSender sender, int index, String[] args) {
+        if (index == 0) {
+            return List.of("create", "edit", "delete", "list");
+        } else if (index == 1) {
+            if (args.length > 0 && sender instanceof Player player) {
+                String firstArg = args[1].toLowerCase();
+                System.out.println(Arrays.toString(args));
+                if (firstArg.equals("delete") || firstArg.equals("edit")) {
+                    return IslandVault.getRegionManager().getRegionNames(IslandTracker.getPlayerIsland(player.getUniqueId()).getUniqueId());
+                }
+            }
+        }
         return List.of();
     }
 
     @Override
     public void perform(CommandSender sender, String[] args) {
+        for(String s : args) {
+            System.out.println(s);
+        }
         if (!(sender instanceof Player player)) return;
 
         String islandUUID = IslandVault.getRegionManager().getIslandUUID(player);
@@ -63,7 +83,6 @@ public class RegionCommand implements SubCommand {
         }
 
         String action = args[0].toLowerCase();
-        String name = args[1];
 
         switch (action) {
             case "create" -> {
@@ -74,7 +93,7 @@ public class RegionCommand implements SubCommand {
                     return;
                 }
 
-                RegionSession session = new RegionSession(name, RegionSession.ActionType.CREATE);
+                RegionSession session = new RegionSession(regionName, RegionSession.ActionType.CREATE);
                 IslandVault.getRegionManager().startSession(player.getUniqueId(), session);
                 player.sendMessage("§7Wähle zwei Positionen aus und schreibe §e'fertig'§7 in den Chat.");
             }
@@ -86,17 +105,18 @@ public class RegionCommand implements SubCommand {
                     return;
                 }
 
-                RegionSession session = new RegionSession(name, RegionSession.ActionType.EDIT);
+                RegionSession session = new RegionSession(regionName, RegionSession.ActionType.EDIT);
                 IslandVault.getRegionManager().startSession(player.getUniqueId(), session);
                 player.sendMessage("§7Wähle neue Positionen und schreibe §e'fertig'§7 in den Chat.");
             }
             case "delete" -> {
-                if (!IslandVault.getRegionManager().regionExists(islandUUID, name)) {
+                String regionName = args[1];
+                if (!IslandVault.getRegionManager().regionExists(islandUUID, regionName)) {
                     player.sendMessage("§cDiese Region existiert nicht.");
                     return;
                 }
-                IslandVault.getRegionManager().removeRegion(islandUUID, name);
-                player.sendMessage("§aRegion \"" + name + "\" gelöscht.");
+                IslandVault.getRegionManager().removeRegion(islandUUID, regionName);
+                player.sendMessage("§aRegion \"" + regionName + "\" gelöscht.");
             }
             case "list" -> {
                 List<Region> regions = IslandVault.getRegionManager().getRegions(islandUUID);
@@ -115,7 +135,7 @@ public class RegionCommand implements SubCommand {
 
                     Component regionLine = text("- ")
                             .color(NamedTextColor.GRAY)
-                            .append(text(name).color(NamedTextColor.YELLOW))
+                            .append(text(regionName).color(NamedTextColor.YELLOW))
                             .append(text(" [Anzeigen]").color(NamedTextColor.DARK_GRAY)
                                     .hoverEvent(HoverEvent.showText(text("§7Partikelvorschau anzeigen")))
                                     .clickEvent(ClickEvent.runCommand("/region show " + regionName)));
@@ -124,14 +144,14 @@ public class RegionCommand implements SubCommand {
                 }
             }
             case "show" -> {
-
-                Region region = IslandVault.getRegionManager().getRegion(islandUUID, name);
+                String regionName = args[1];
+                Region region = IslandVault.getRegionManager().getRegion(islandUUID, regionName);
                 if (region == null) {
                     player.sendMessage("§cRegion nicht gefunden.");
                     return;
                 }
 
-                player.sendMessage("§aPartikelvorschau für §e" + name + " §awird angezeigt...");
+                player.sendMessage("§aPartikelvorschau für §e" + regionName + " §awird angezeigt...");
 
                 new BukkitRunnable() {
                     int ticks = 60;
@@ -141,7 +161,8 @@ public class RegionCommand implements SubCommand {
                             cancel();
                             return;
                         }
-                        RegionListener.drawParticleOutline(player, region.getPos1(), region.getPos2(), Particle.HAPPY_VILLAGER);
+                        IslandVault.getParticleManager().showBox(player, "regionBox", region.getPos1(), region.getPos2(), Particle.DUST, Color.GREEN, null);
+                        //RegionListener.drawParticleOutline(player.getUniqueId(), region.getPos1(), region.getPos2(), Particle.HAPPY_VILLAGER);
                     }
                 }.runTaskTimer(IslandVault.getPlugin(), 0L, 10L);
             }

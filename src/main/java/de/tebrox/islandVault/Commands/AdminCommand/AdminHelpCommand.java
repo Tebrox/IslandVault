@@ -38,7 +38,7 @@ public class AdminHelpCommand implements SubCommand {
     }
 
     @Override
-    public List<String> getTabCompletion(int index, String[] args) {
+    public List<String> getTabCompletion(CommandSender sender, int index, String[] args) {
         return null;
     }
 

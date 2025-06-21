@@ -3,8 +3,6 @@ package de.tebrox.islandVault.Utils;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.tebrox.islandVault.IslandVault;
-import world.bentobox.bentobox.BentoBox;
-import world.bentobox.bentobox.database.objects.Ranks;
 
 import java.io.File;
 import java.io.FileReader;

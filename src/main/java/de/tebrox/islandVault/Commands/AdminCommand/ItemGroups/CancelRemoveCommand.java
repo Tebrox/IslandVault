@@ -20,7 +20,7 @@ public class CancelRemoveCommand implements SubCommand {
     @Override public PermissionDefault getPermissionDefault() { return PermissionDefault.OP; }
 
     @Override
-    public List<String> getTabCompletion(int i, String[] args) { return Collections.emptyList(); }
+    public List<String> getTabCompletion(CommandSender sender, int i, String[] args) { return Collections.emptyList(); }
 
     @Override
     public void perform(CommandSender sender, String[] args) {

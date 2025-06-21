@@ -6,7 +6,6 @@ import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import de.tebrox.islandVault.VaultData;
 import org.bukkit.*;
 import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ItemSpawnEvent;
@@ -18,11 +17,10 @@ import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ItemAutoCollectListener implements Listener {
-    private IslandVault plugin;
-    private NamespacedKey dropMarkerKey;
+    private final IslandVault plugin;
+    private final NamespacedKey dropMarkerKey;
 
     public ItemAutoCollectListener(IslandVault plugin) {
         this.plugin = plugin;
@@ -50,7 +48,7 @@ public class ItemAutoCollectListener implements Listener {
     }
 
     private void tryAutoCollect(Item item, Island island) {
-        if(!item.isValid() || item.isDead()) {
+        if(!item.isValid() || item.isDead() || IslandVault.getRegionManager().isInAnyRegion(island.getUniqueId(), item.getLocation())) {
             return;
         }
 

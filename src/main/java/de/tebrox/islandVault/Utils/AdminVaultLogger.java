@@ -24,7 +24,7 @@ public class AdminVaultLogger {
         logFile = new File(folder, "vault-actions.log");
     }
 
-    public void logAction(LoggerAction action, Player actor, UUID vaultOwner, Material material, int amount) {
+    public void logAction(LoggerAction action, Player actor, UUID vaultOwner, ItemStackKey itemStackKey, int amount) {
         String ownerName = Bukkit.getOfflinePlayer(vaultOwner).getName();
 
         String a = "";
@@ -43,7 +43,7 @@ public class AdminVaultLogger {
             ownerName != null ? ownerName : vaultOwner.toString(),
             actor.getName(),
             amount,
-            material,
+            itemStackKey.toItemStack().getType(),
             a
         );
 

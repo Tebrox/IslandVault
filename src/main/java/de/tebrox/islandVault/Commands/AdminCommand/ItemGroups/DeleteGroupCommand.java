@@ -44,9 +44,7 @@ public class DeleteGroupCommand implements SubCommand {
     }
 
     @Override
-    public List<String> getTabCompletion(int index, String[] args) {
-        System.out.println(args[1].toString());
-        System.out.println("index: " + index);
+    public List<String> getTabCompletion(CommandSender sender, int index, String[] args) {
         if (index == 0) {
             String partialGroup = !args[0].isEmpty() ? args[1].toLowerCase() : "";
             return ItemGroupManager.getPermissionGroups().keySet().stream()

@@ -44,7 +44,7 @@ public interface SubCommand {
      * @param args All the args in the command, including the currently tab-completed one.
      * @return The list of words to tab-complete.
      */
-    List<String> getTabCompletion (int index, String[] args);
+    List<String> getTabCompletion (CommandSender sender, int index, String[] args);
 
     /**
      * Performs the command.

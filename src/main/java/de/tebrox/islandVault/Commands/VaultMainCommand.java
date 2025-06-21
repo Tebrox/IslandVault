@@ -21,6 +21,7 @@ public class VaultMainCommand extends MainCommand {
         subCommands.add(new HelpCommand());
         subCommands.add(new ItemSearchCommand());
         subCommands.add(new SettingsCommand());
+        subCommands.add(new RegionCommand());
 
 
         for(SubCommand cmd : getSubCommands()) {
@@ -29,7 +30,7 @@ public class VaultMainCommand extends MainCommand {
                 permissionDefault = PermissionDefault.FALSE;
             }
 
-            if(cmd.getPermission() == null) continue;
+            if(cmd.getPermission() == null || cmd.getPermission().isEmpty()) continue;
 
             if(PermissionUtils.registerPermission(cmd.getPermission(), cmd.getDescription(), permissionDefault)) {
                 IslandVault.getPlugin().getLogger().log(Level.INFO, "Registered permission: " + cmd.getSyntax());

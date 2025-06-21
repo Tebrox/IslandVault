@@ -30,6 +30,6 @@ public class VaultEventListener implements Listener {
         }else{
             loggerAction = LoggerAction.REMOVE_ITEM;
         }
-        logger.logAction(loggerAction, event.getActor(), event.getIsland().getOwner(), event.getMaterial(), Math.abs(event.getAmountChange()));
+        logger.logAction(loggerAction, event.getActor(), event.getIsland().getOwner(), event.getItemStackKey(), Math.abs(event.getAmountChange()));
     }
 }

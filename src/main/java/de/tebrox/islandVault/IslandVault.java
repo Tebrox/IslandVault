@@ -11,46 +11,43 @@ import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
 import de.tebrox.islandVault.Utils.*;
 import de.tebrox.islandvault.api.*;
 import me.kodysimpson.simpapi.menu.MenuManager;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 import world.bentobox.bentobox.managers.IslandsManager;
 
 import java.io.*;
-import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.logging.*;
 import java.util.logging.Formatter;
 
 public final class IslandVault extends JavaPlugin {
 
+    //Main class
     private static IslandVault plugin;
+
+    //Manager classes
+    private static ParticleManager particleManager;
     private static RegionManager regionManager;
     private static VaultManager vaultManager;
     private static VaultSyncManager vaultSyncManager;
+    private static LanguageManager languageManager;
+
+    //Permission
     private static PermissionItemRegistry permissionItemRegistry;
-    FileConfiguration config = getConfig();
     private static HashMap<String, List<String>> permissionGroups = new HashMap<>();
+    private Map<String, Integer> radiusPermissionMap = new HashMap<>();
+
+    //Commands
     private static MainCommand mainCommand;
     private static MainCommand adminMainCommand;
-    //private Logger logger;
-    private Map<String, Integer> radiusPermissionMap = new HashMap<>();
-    private static LanguageManager languageManager;
+
     private boolean debug;
     private boolean firstStart = false;
-
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
     public void onEnable() {
@@ -100,6 +97,7 @@ public final class IslandVault extends JavaPlugin {
         MenuManager.setup(getServer(), this);
 
         languageManager = new LanguageManager(this);
+        particleManager = new ParticleManager(this);
 
         vaultManager = new VaultManager(this);
         vaultSyncManager = new VaultSyncManager(this);
@@ -136,31 +134,20 @@ public final class IslandVault extends JavaPlugin {
     @Override
     public void onDisable() {
         vaultManager.flushAll();
+        particleManager.stopAll();
     }
 
     public static IslandVault getPlugin() {
         return plugin;
     }
 
-    public static VaultManager getVaultManager() {
-        return vaultManager;
-    }
-
+    public static VaultManager getVaultManager() { return vaultManager; }
     public static RegionManager getRegionManager() { return  regionManager; }
+    public static ParticleManager getParticleManager() { return particleManager; }
+    public static VaultSyncManager getVaultSyncManager() { return vaultSyncManager; }
 
-    public static VaultSyncManager getVaultSyncManager() {
-        return vaultSyncManager;
-    }
-
-    public static PermissionItemRegistry getPermissionItemRegistry() {
-        return permissionItemRegistry;
-    }
-
-    public static Gson getGson() { return gson; }
-
-    public static HashMap<String, List<String>> getPermissionGroups() {
-        return permissionGroups;
-    }
+    public static PermissionItemRegistry getPermissionItemRegistry() { return permissionItemRegistry; }
+    public static HashMap<String, List<String>> getPermissionGroups() { return permissionGroups; }
 
     private void setupLogger() {
 
@@ -195,7 +182,6 @@ public final class IslandVault extends JavaPlugin {
     }
 
     private void registerPermissions() {
-        Map<String, ItemPermissionRule> items = permissionItemRegistry.getWhitelistedItems();
         for(String id : permissionItemRegistry.getWhitelistedItems().keySet()) {
             String permission = Permissions.VAULT.getLabel() + id;
             if(PermissionUtils.registerPermission(permission, "Vault item " + id, PermissionDefault.FALSE)) {
@@ -226,13 +212,12 @@ public final class IslandVault extends JavaPlugin {
         radiusPermissionMap.clear();
 
         List<Integer> radii = getConfig().getIntegerList("auto-collect-radius");
-        for (int i = 0; i < radii.size(); i++) {
-            int radius = radii.get(i);
+        for (int radius : radii) {
             if (radius > 0) {
                 String permission = Permissions.COLLECT_RADIUS.getLabel() + radius;
-                if(PermissionUtils.registerPermission(permission, "Autocollect radius " + radius, PermissionDefault.FALSE)) {
+                if (PermissionUtils.registerPermission(permission, "Autocollect radius " + radius, PermissionDefault.FALSE)) {
                     //debugLogger.info("Registered autocolllect radius " + radius);
-                }else{
+                } else {
                     //debugLogger.warning("Cannot register autocollect radius " + radius);
                 }
                 radiusPermissionMap.put(permission, radius);

@@ -23,7 +23,7 @@ public class RemoveItemFromSessionCommand implements SubCommand {
     @Override public PermissionDefault getPermissionDefault() { return PermissionDefault.OP; }
 
     @Override
-    public List<String> getTabCompletion(int i, String[] args) {
+    public List<String> getTabCompletion(CommandSender sender, int i, String[] args) {
         return Collections.emptyList();
     }
 

@@ -8,7 +8,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import world.bentobox.bentobox.database.objects.Island;
 
 import javax.annotation.Nullable;
 import java.util.*;

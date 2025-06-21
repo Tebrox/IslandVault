@@ -42,7 +42,7 @@ public class RemoveItemFromGroupCommand implements SubCommand {
     }
 
     @Override
-    public List<String> getTabCompletion(int index, String[] args) {
+    public List<String> getTabCompletion(CommandSender sender, int index, String[] args) {
         if (index == 0) {
             // Gruppennamen vorschlagen
             String partialGroup = args.length > 0 ? args[0].toLowerCase() : "";

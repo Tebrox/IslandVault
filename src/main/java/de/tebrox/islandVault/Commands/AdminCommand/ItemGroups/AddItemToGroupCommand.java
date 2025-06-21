@@ -43,7 +43,7 @@ public class AddItemToGroupCommand implements SubCommand {
     }
 
     @Override
-    public List<String> getTabCompletion(int index, String[] args) {
+    public List<String> getTabCompletion(CommandSender sender, int index, String[] args) {
         // index 0 = Gruppenname, index 1 = items
         if (index == 0) {
             String partialGroup = !args[1].isEmpty() ? args[1].toLowerCase() : "";

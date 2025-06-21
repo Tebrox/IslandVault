@@ -9,8 +9,9 @@ import de.tebrox.islandVault.VaultData;
 import me.kodysimpson.simpapi.menu.Menu;
 import me.kodysimpson.simpapi.menu.MenuManager;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
-import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -117,7 +118,8 @@ public class SettingsMenu extends Menu {
                     else if(inventoryClickEvent.isRightClick()) {
                         player.closeInventory();
                         player.playSound(player, Sound.ENTITY_EXPERIENCE_BOTTLE_THROW, 1, 1);
-                        IslandUtils.showRadiusParticles(player, player.getLocation(), 5);
+                        IslandVault.getParticleManager().showRadiusBorder(player, "radius", player.getLocation(), 10, Particle.DUST, Color.BLUE, null);
+                        //IslandUtils.showRadiusParticles(player, player.getLocation(), 5);
                     }
                     break;
                 case Material.COMPASS:

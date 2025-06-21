@@ -40,7 +40,7 @@ public class CancelRemoveItemGroupCommand implements SubCommand {
     }
 
     @Override
-    public List<String> getTabCompletion(int index, String[] args) {
+    public List<String> getTabCompletion(CommandSender sender, int index, String[] args) {
         // Keine TabCompletion, da versteckt
         return Collections.emptyList();
     }

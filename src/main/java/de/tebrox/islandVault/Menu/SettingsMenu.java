@@ -3,23 +3,30 @@ package de.tebrox.islandVault.Menu;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Utils.BentoBoxRanks;
 import de.tebrox.islandVault.Utils.IslandUtils;
+import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import de.tebrox.islandVault.Utils.PlayerDataUtils;
 import de.tebrox.islandVault.VaultData;
 import me.kodysimpson.simpapi.menu.Menu;
 import me.kodysimpson.simpapi.menu.MenuManager;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.File;
 import java.util.*;
 
 public class SettingsMenu extends Menu {
 
     private VaultData vaultData;
     private Class<?> previousMenu = null;
+
+    private File bentoBoxfile;
+    private YamlConfiguration bentoBoxconfig;
 
     public SettingsMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
@@ -31,11 +38,19 @@ public class SettingsMenu extends Menu {
         if(playerMenuUtility.getData("previousMenu") != null) {
             previousMenu = (Class<?>) playerMenuUtility.getData("previousMenu");
         }
+
+        String playerLang = IslandVault.getLanguageManager().getPlayerLanguageKey(player);
+        if(playerLang.equals("en")) {
+            playerLang = "en_US";
+        }
+
+        bentoBoxfile = new File("plugins/BentoBox/locales/BentoBox/" + playerLang + ".yml");
+        bentoBoxconfig = YamlConfiguration.loadConfiguration(bentoBoxfile);
     }
 
     @Override
     public String getMenuName() {
-        return "Einstellungen";
+        return IslandVault.getLanguageManager().translate(player, "menu.settings");
     }
 
     @Override
@@ -50,7 +65,7 @@ public class SettingsMenu extends Menu {
 
     @Override
     public void handleMenu(InventoryClickEvent inventoryClickEvent) {
-        if(inventoryClickEvent.getWhoClicked() instanceof Player player) {
+        if(inventoryClickEvent.getWhoClicked() instanceof Player) {
             ItemStack item = inventoryClickEvent.getCurrentItem();
 
             if(item == null) {
@@ -96,8 +111,7 @@ public class SettingsMenu extends Menu {
                     break;
                 case Material.HOPPER:
                     if(inventoryClickEvent.isLeftClick()) {
-                        //IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).setAutoCollect(!IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).getAutoCollect());
-                        vaultData.setAutoCollect(!vaultData.isAutoCollect());
+                        vaultData.setAutoCollect(!vaultData.getAutoCollect());
                         player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                     }
                     else if(inventoryClickEvent.isRightClick()) {
@@ -130,25 +144,34 @@ public class SettingsMenu extends Menu {
         List<ItemStack> list = new ArrayList<>();
 
         if(previousMenu != null) {
-            list.add(makeItem(Material.ARROW, "§cZurück"));
+            list.add(makeItem(Material.ARROW, IslandVault.getLanguageManager().translate(player, "menu.back")));
         }
 
         if(vaultData.getOwnerUUID().equals(playerMenuUtility.getOwner().getUniqueId())) {
-            list.add(makeItem(Material.HOPPER, "§aAuto-Collect Ein/Aus"));
+            list.add(makeItem(Material.HOPPER, IslandVault.getLanguageManager().translate(player, "menu.item.radius.displayName"), createAutocollectLore().toArray(new String[0])));
         }
 
         if(vaultData.getOwnerUUID().equals(playerMenuUtility.getOwner().getUniqueId())) {
-            list.add(makeItem(Material.BOOK, "§aLagerberechtigung", createAccessLore().toArray(new String[0])));
+            list.add(makeItem(Material.BOOK, IslandVault.getLanguageManager().translate(player, "menu.item.vaultAuthorization.displayName"), createAccessLore().toArray(new String[0])));
         }
 
-        List<String> tempList = new ArrayList<>();
-        tempList.add("");
-        tempList.add(String.valueOf(PlayerDataUtils.loadShowOnlyItemsWithAmount(player)));
-        list.add(makeItem(Material.COMPASS, "Zeige nur Items mit Menge", tempList.toArray(new String[0])));
-
-        //TODO richtige lore
+        list.add(makeItem(Material.COMPASS, IslandVault.getLanguageManager().translate(player, "menu.item.vaultItemFilter.displayName"), createFilterLore().toArray(new String[0])));
 
         return list;
+    }
+
+    private List<String> createFilterLore() {
+        String stateParam = "menu.item.vaultItemFilter." + (PlayerDataUtils.loadShowOnlyItemsWithAmount(player) ? "availableOnly" : "showAll");
+        return IslandVault.getLanguageManager().translateList(player, stateParam);
+    }
+
+    private List<String> createAutocollectLore() {
+        String stateParam = "state." + (vaultData.getAutoCollect() ? "active" : "inactive");
+        String state = IslandVault.getLanguageManager().translate(player, stateParam);
+
+        stateParam = "state." + (vaultData.getAutoCollect() ? "disable" : "enable");
+        String state2 = IslandVault.getLanguageManager().translate(player, stateParam);
+        return IslandVault.getLanguageManager().translateList(player, "menu.item.radius.itemLore", Map.of("radius", String.valueOf(LuckPermsUtils.getMaxRadiusFromPermissions(vaultData.getOwnerUUID())),"state", state, "booleanState", state2), true);
     }
 
     private List<String> createAccessLore() {
@@ -159,21 +182,16 @@ public class SettingsMenu extends Menu {
 
         for (int level : ACCESS_LEVELS) {
             String name = BentoBoxRanks.getName(level);
+            String translated = bentoBoxconfig.getString("ranks." + name.replace(" ", "-"), name);
+            if (level >= currentLevel) {
 
-            if (level <= currentLevel) {
-                lore.add("§a✔ " + name);
+                lore.add("§a✔ " + translated);
             } else {
-                lore.add("§c✘ " + name);
+                lore.add("§c✘ " + translated);
             }
         }
 
-
-        lore.add("§rKlicke auf das Buch,");
-        lore.add("§rum das Zugriffslevel zu ändern.");
-        lore.add("");
-        lore.add("§rLinksklick: Zum nächsten Eintrag");
-        lore.add("§rRechtsklick: Zum vorherigen Eintrag");
-        lore.add("§rShiftklick: Zum Standardeintrag (Owner)");
+        lore.addAll(IslandVault.getLanguageManager().translateList(player, "menu.item.vaultAuthorization.itemLore", Map.of("ownerlabel", bentoBoxconfig.getString("ranks.owner", "Owner")), true));
 
         return lore;
     }
@@ -183,22 +201,24 @@ public class SettingsMenu extends Menu {
             throw new IllegalArgumentException("Liste der Levels ist leer.");
         }
 
-        int index = accessLevels.indexOf(currentLevel);
+        // Erstelle eine kopierte und umgedrehte Liste
+        List<Integer> reversed = new ArrayList<>(accessLevels);
+        Collections.reverse(reversed);
+
+        int index = reversed.indexOf(currentLevel);
         if (index == -1) {
-            // Optional: Zum ersten Element zurückfallen
-            return accessLevels.getFirst();
+            return reversed.getFirst(); // Fallback
         }
 
-        int size = accessLevels.size();
+        int size = reversed.size();
         int nextIndex;
 
         if (forward) {
             nextIndex = (index + 1) % size;
         } else {
             nextIndex = (index - 1 + size) % size;
-            // Das +size stellt sicher, dass der Index nie negativ wird
         }
 
-        return accessLevels.get(nextIndex);
+        return reversed.get(nextIndex);
     }
 }

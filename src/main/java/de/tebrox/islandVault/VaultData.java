@@ -54,7 +54,7 @@ public class VaultData {
     }
 
 
-    public boolean isAutoCollect() {
+    public boolean getAutoCollect() {
         return autoCollect;
     }
 

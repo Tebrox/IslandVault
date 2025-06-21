@@ -20,7 +20,7 @@ public class VaultMainCommand extends MainCommand {
         subCommands.add(new OpenCommand());
         subCommands.add(new HelpCommand());
         subCommands.add(new ItemSearchCommand());
-        //subCommands.add(new SettingsCommand());
+        subCommands.add(new SettingsCommand());
 
 
         for(SubCommand cmd : getSubCommands()) {

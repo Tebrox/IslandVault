@@ -58,7 +58,7 @@ public class ItemAutoCollectListener implements Listener {
         if (ownerUUID == null) return;
 
         VaultData vaultData = IslandVault.getVaultManager().getCachedVault(island.getUniqueId());
-        if(!vaultData.isAutoCollect()) {
+        if(!vaultData.getAutoCollect()) {
             return;
         }
 

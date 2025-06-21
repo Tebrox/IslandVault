@@ -4,10 +4,13 @@ auto-collect-radius:
   - 5
   - 10
   - 20
-
-# Liste von Item-Typen, die ausgeschlossen sind.
-blacklist: [spawn_egg, head]
-
+  -
 # Debug-Modus ein-/ausschalten (true = aktiviert, false = deaktiviert).
 # Bei aktiviertem Debug werden zusätzliche Infos z.B. im Server-Log ausgegeben.
 debug: false
+
+rank_blacklist:
+  - banned
+  - sub owner
+  - mod
+  - admin

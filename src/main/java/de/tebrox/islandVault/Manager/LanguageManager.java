@@ -106,7 +106,7 @@ public class LanguageManager {
         return sb.toString();
     }
 
-    private String getPlayerLanguageKey(Player player) {
+    public String getPlayerLanguageKey(Player player) {
         String locale = player.getLocale();
         return locale.split("_")[0].toLowerCase(Locale.ROOT);
     }

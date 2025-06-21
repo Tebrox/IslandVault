@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Utils;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import de.tebrox.islandVault.IslandVault;
 import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Ranks;
 
@@ -21,19 +22,22 @@ public class BentoBoxRanks {
             return;
         }
 
+        List<String> blackListRanks = IslandVault.getPlugin().getConfig().getStringList("rank_blacklist");
+
         try (FileReader reader = new FileReader(file)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
             JsonObject ranks = json.getAsJsonObject("rankReference");
 
             for (String key : ranks.keySet()) {
+                if(blackListRanks.contains(key.replace("ranks.", ""))) {
+                    continue;
+                }
                 int value = ranks.get(key).getAsInt();
                 String roleName = key.replace("ranks.", "").replace("-", " ");
 
                 nameToId.put(roleName.toLowerCase(), value);
                 idToName.put(value, roleName);
             }
-
-            System.out.println("[BentoBoxRanks] " + idToName.size() + " Ränge geladen.");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -49,6 +53,12 @@ public class BentoBoxRanks {
 
     public static List<Integer> getSortedRoleIds() {
         return new ArrayList<>(idToName.keySet());
+    }
+
+    public static List<Integer> getSortedRoleIdsReversed() {
+        List<Integer> reversed = new ArrayList<>(getSortedRoleIds());
+        Collections.reverse(reversed);
+        return reversed;
     }
 
     public static Map<Integer, String> getAllRoles() {

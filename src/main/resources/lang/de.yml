@@ -21,8 +21,9 @@ menu:
   nextPage: "&aNächste Seite"
   lastPage: "&aLetzte Seite"
   close: "&4Schließen"
-  settings: "&aEinstellungen"
-  showRadius: "&Sammelradius für 5 Sekunden anzeigen"
+  back: "&aZurück"
+  settings: "Einstellungen"
+  showRadius: "&6Sammelradius für 5 Sekunden anzeigen"
   item:
     vaultItem:
       itemLore:
@@ -34,7 +35,7 @@ menu:
     radius:
       displayName: "Automatisches Einsammeln"
       itemLore:
-        - "&eAktueller Radius: %radius%"
+        - "&eAktueller Radius: &b%radius%"
         - "&eStatus: &b%state%"
         - "&eLinksklick: &b%booleanState% einsammeln"
         - "&eRechtsklick: &bRadius für 5 Sekunden anzeigen"
@@ -47,3 +48,16 @@ menu:
         - ""
         - "&eLinksklick: &bNächste Option"
         - "&eRechtsklick: &bSortierrichtung ändern"
+    vaultAuthorization:
+      displayName: "Lagerberechtigung"
+      itemLore:
+        - "&9Klicke auf das Buch,"
+        - "&9um das Zugriffslevel zu ändern."
+        - ""
+        - "&eLinksklick: &bZum nächsten Eintrag"
+        - "&eRechtsklick: &bZum vorherigen Eintrag"
+        - "&eShiftklick: &bZum Standardeintrag (%ownerlabel%)"
+    vaultItemFilter:
+      displayName: "Item Filter"
+      showAll: "&eZeige alle Items"
+      availableOnly: "&eZeige nur Items mit vorhandenem Bestand"

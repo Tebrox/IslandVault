@@ -1,5 +1,7 @@
 package de.tebrox.islandVault;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import de.tebrox.islandVault.Commands.AdminCommand.VaultAdminMainCommand;
 import de.tebrox.islandVault.Commands.VaultMainCommand;
 import de.tebrox.islandVault.Enums.Permissions;
@@ -34,6 +36,7 @@ import java.util.logging.Formatter;
 public final class IslandVault extends JavaPlugin {
 
     private static IslandVault plugin;
+    private static RegionManager regionManager;
     private static VaultManager vaultManager;
     private static VaultSyncManager vaultSyncManager;
     private static PermissionItemRegistry permissionItemRegistry;
@@ -46,6 +49,8 @@ public final class IslandVault extends JavaPlugin {
     private static LanguageManager languageManager;
     private boolean debug;
     private boolean firstStart = false;
+
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
     public void onEnable() {
@@ -99,6 +104,7 @@ public final class IslandVault extends JavaPlugin {
         vaultManager = new VaultManager(this);
         vaultSyncManager = new VaultSyncManager(this);
         permissionItemRegistry = new PermissionItemRegistry(this);
+        regionManager = new RegionManager(this);
         ItemGroupManager.init(this);
 
         reloadPluginConfig(null);
@@ -114,9 +120,6 @@ public final class IslandVault extends JavaPlugin {
             public void run() {
                 for(Player player : getServer().getOnlinePlayers()) {
                     IslandsManager islandsManager = IslandUtils.getIslandManager();
-                    if(islandsManager == null) {
-                        //debugLogger.warning("Cannot load onlineplayer islands. Islandmanager is null!");
-                    }
 
                     Island island = islandsManager.getIsland(player.getWorld(), player.getUniqueId());
                     if (island != null) {
@@ -143,6 +146,8 @@ public final class IslandVault extends JavaPlugin {
         return vaultManager;
     }
 
+    public static RegionManager getRegionManager() { return  regionManager; }
+
     public static VaultSyncManager getVaultSyncManager() {
         return vaultSyncManager;
     }
@@ -150,6 +155,8 @@ public final class IslandVault extends JavaPlugin {
     public static PermissionItemRegistry getPermissionItemRegistry() {
         return permissionItemRegistry;
     }
+
+    public static Gson getGson() { return gson; }
 
     public static HashMap<String, List<String>> getPermissionGroups() {
         return permissionGroups;

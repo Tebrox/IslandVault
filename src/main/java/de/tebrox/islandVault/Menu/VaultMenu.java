@@ -34,8 +34,8 @@ public class VaultMenu extends PaginatedMenu {
     private ItemSortUtil.SortOption currentOption;
     private ItemSortUtil.SortDirection currentDirection;
     private final List<ItemSortUtil.SortOption> options = Arrays.asList(ItemSortUtil.SortOption.values());
-    private Island island;
-    private VaultData vaultData;
+    private final Island island;
+    private final VaultData vaultData;
 
     private final Player viewer;
 
@@ -75,6 +75,35 @@ public class VaultMenu extends PaginatedMenu {
         List<ItemStack> filteredItems = vaultData.filterItems(playerMenuUtility.getOwner(), searchQuery);
 
         ItemSortUtil.sortItems(filteredItems, vaultData, player, currentOption, currentDirection);
+
+        Player player = playerMenuUtility.getOwner();
+        boolean isOp = player.isOp();
+
+        for (int i = 0; i < filteredItems.size(); i++) {
+            ItemStack item = filteredItems.get(i);
+            if (item == null || item.getType().isAir()) continue;
+
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) continue;
+
+            List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+
+            lore = IslandVault.getLanguageManager().translateList(player, "menu.item.vaultItem.itemLore", Map.of("amount", String.valueOf(vaultData.getAmount(item)), "maxStackSize", String.valueOf(item.getMaxStackSize())), true);
+
+            // Zusätzliche OP-Lore, falls OP
+            if (isOp) {
+                lore.add("§8§m------------------------");
+                lore.add("§6§lDEBUG-INFO");
+                lore.add("§7Material: §f" + item.getType());
+                // weitere Debug-Infos ...
+                lore.add("§8§m------------------------");
+            }
+
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+
+            filteredItems.set(i, item);
+        }
 
         int size = filteredItems.size();
         int rest = size % maxItemsPerPage;

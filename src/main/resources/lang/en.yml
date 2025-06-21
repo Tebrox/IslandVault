@@ -21,7 +21,8 @@ menu:
   nextPage: "&aNext page"
   lastPage: "&aLast page"
   close: "&4Close"
-  settings: "&aSettings"
+  settings: "Settings"
+  back: "&aBack"
   showRadius: "&6Show autocollect radius for 5 seconds"
   item:
     vaultItem:
@@ -34,7 +35,7 @@ menu:
     radius:
       displayName: "Autocollect"
       itemLore:
-        - "&eCurrent radius: %radius%"
+        - "&eCurrent radius: &b%radius%"
         - "&eState: &b%state%"
         - "&eLeftclick: &b%booleanState% autocollect"
         - "&eRightclick: &bShow radius for 5 seconds"
@@ -47,3 +48,16 @@ menu:
         - ""
         - "&eLeftclick: &bnext option"
         - "&eRightclick: &bchange direction"
+    vaultAuthorization:
+      displayName: "Vault authorization"
+      itemLore:
+        - "&9Click on the book"
+        - "&9to change the access level."
+        - ""
+        - "&eLeft-click: &bGo to the next entry"
+        - "&eRight-click: &bGo to the previous entry"
+        - "&eShift-click: &bGo to the default entry (%ownerlabel%)"
+    vaultItemFilter:
+      displayName: "Item Filter"
+      showAll: "&eShow all items"
+      availableOnly: "&eShow available only items"

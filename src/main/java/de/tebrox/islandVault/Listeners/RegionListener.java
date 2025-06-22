@@ -11,12 +11,22 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.util.Vector;
-
 import java.util.UUID;
 
+/**
+ * Listener that handles region selection and creation/editing through player interaction and chat input.
+ * <p>
+ * Players can define region boundaries using left/right click on blocks and finalize the selection via chat.
+ * This is part of the custom island vault region management system.
+ */
 public class RegionListener implements Listener {
 
+    /**
+     * Handles block interactions to set region corners (position 1 and 2).
+     * Only works if the player is currently in a region editing session.
+     *
+     * @param e the interaction event triggered by the player
+     */
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         if (e.getHand() != EquipmentSlot.HAND) return;
@@ -41,6 +51,15 @@ public class RegionListener implements Listener {
         showSelectionParticles(player.getUniqueId(), session);
     }
 
+    /**
+     * Handles chat input to finalize or modify the region session.
+     * Recognized keywords:
+     * - "fertig": completes the session and creates/edits the region.
+     * - "pos1": sets position 1 to the player's current location.
+     * - "pos2": sets position 2 to the player's current location.
+     *
+     * @param event the chat event triggered by the player
+     */
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
@@ -102,6 +121,13 @@ public class RegionListener implements Listener {
         }
     }
 
+    /**
+     * Displays particle effects to visualize the current region selection for a player.
+     * Green indicates both positions are set, red if only one is set.
+     *
+     * @param playerId the UUID of the player viewing the selection
+     * @param session  the active region session
+     */
     public static void showSelectionParticles(UUID playerId, RegionSession session) {
         Location pos1 = session.getPos1();
         Location pos2 = session.getPos2();
@@ -119,6 +145,12 @@ public class RegionListener implements Listener {
         IslandVault.getParticleManager().showBox(Bukkit.getPlayer(playerId), "regionBox", pos1, pos2, Particle.DUST, color, null);
     }
 
+    /**
+     * Converts a Location to a readable block coordinate string.
+     *
+     * @param loc the location to format
+     * @return a string representing the block coordinates
+     */
     private String loc(Location loc) {
         return "(" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + ")";
     }

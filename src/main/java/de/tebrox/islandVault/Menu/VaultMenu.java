@@ -26,6 +26,11 @@ import world.bentobox.bentobox.database.objects.Island;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The VaultMenu displays a paginated view of the player's island storage.
+ * It supports sorting, navigation, and interaction with stored items.
+ * This class extends SimpAPI's {@link PaginatedMenu}.
+ */
 public class VaultMenu extends PaginatedMenu {
     protected ItemStack FILLER_GLASS = makeItem(Material.BLACK_STAINED_GLASS_PANE, "", true, false);
     protected ItemStack NO_ITEMS = makeItem(Material.BARRIER, "You have no items", false, false);
@@ -38,6 +43,7 @@ public class VaultMenu extends PaginatedMenu {
     private final VaultData vaultData;
 
     private final Player viewer;
+
 
     public VaultMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
@@ -377,26 +383,6 @@ public class VaultMenu extends PaginatedMenu {
         // Close button
         texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2FkNTMyYWRiYTliNGY5ZWZlYjQ3ZjRkNmI0ZmMxZWQyZTZkZTVjY2FhNzc5ZjU1NTk4ZTFlYWVjYWVlZjg5MiJ9fX0=";
         inventory.setItem(49, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.close")), false, false));
-
-        /**
-        int maxRadius = LuckPermsUtils.getMaxRadiusFromPermissions(IslandUtils.getIslandOwnerUUID(playerMenuUtility.getOwner()));
-        if(maxRadius > 0) {
-            String displayName = ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.item.radius.displayName"));
-            Material material = Material.HOPPER;
-            boolean isEnabled = IslandVault.getVaultManager().getVaults().get(ownerUUID).getAutoCollect();
-
-            String stateParam = isEnabled ? "state.active": "state.inactive";
-            String state = IslandVault.getLanguageManager().translate(player, stateParam);
-
-            String bStateParam = isEnabled ? "state.disable": "state.enable";
-            String bState = IslandVault.getLanguageManager().translate(player, bStateParam);
-
-            List<String> lore = IslandVault.getLanguageManager().translateList(player, "menu.item.radius.itemLore", Map.of("radius", String.valueOf(maxRadius), "state", state, "booleanState", bState), true);
-
-
-            inventory.setItem(53, makeItem(material, displayName, false, isEnabled, lore.toArray(new String[0])));
-        }
-         **/
 
         if(ownerUUID.equals(viewer.getUniqueId())) {
             texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWQyNzM3YThkMTlhYjA3OWNlZjdhODI0ZjE0OTcxNTVkYWE5MjVlOGMxYzZiN2E2Yzc1NjVlOGJlMzAzOWZhMCJ9fX0=";

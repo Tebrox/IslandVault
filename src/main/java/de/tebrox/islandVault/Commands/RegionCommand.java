@@ -162,7 +162,6 @@ public class RegionCommand implements SubCommand {
                             return;
                         }
                         IslandVault.getParticleManager().showBox(player, "regionBox", region.getPos1(), region.getPos2(), Particle.DUST, Color.GREEN, null);
-                        //RegionListener.drawParticleOutline(player.getUniqueId(), region.getPos1(), region.getPos2(), Particle.HAPPY_VILLAGER);
                     }
                 }.runTaskTimer(IslandVault.getPlugin(), 0L, 10L);
             }

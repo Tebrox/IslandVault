@@ -16,6 +16,18 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
+/**
+ * Manages language files and translations for different player locales.
+ * <p>
+ * This class handles loading language YAML files from a "lang" folder,
+ * copying default language files from plugin resources if missing,
+ * caching loaded languages, and performing placeholder replacements.
+ * <p>
+ * Supports per-player placeholder registries to inject dynamic values
+ * into translated strings. Also supports translation of single strings
+ * and lists of strings.
+ */
 public class LanguageManager {
 
     private final Plugin plugin;
@@ -25,6 +37,11 @@ public class LanguageManager {
 
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("%(\\w+)(:([^%]+))?%");
 
+    /**
+     * Creates a new LanguageManager instance and loads languages.
+     *
+     * @param plugin the plugin instance used to locate resources and plugin folder
+     */
     public LanguageManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.langFolder = new File(plugin.getDataFolder(), "lang");
@@ -32,6 +49,10 @@ public class LanguageManager {
         loadLanguages();
     }
 
+    /**
+     * Copies default language files from the plugin's resources to the lang folder if not present.
+     * Supports a fixed list of default files ("en.yml", "de.yml").
+     */
     private void copyDefaultLangFiles() {
         if (!langFolder.exists()) langFolder.mkdirs();
 
@@ -56,6 +77,11 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Loads all language YAML files from the lang folder into memory.
+     * Clears any previously loaded languages.
+     * Logs warnings if no language files are found or if any file fails to load.
+     */
     public void loadLanguages() {
         if (!langFolder.exists()) langFolder.mkdirs();
 
@@ -80,10 +106,25 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Gets the PlaceholderRegistry for a given player.
+     * If none exists yet, a new one will be created and cached.
+     *
+     * @param player the player whose placeholder registry is requested
+     * @return the player's PlaceholderRegistry
+     */
     public PlaceholderRegistry getPlaceholders(Player player) {
         return playerPlaceholders.computeIfAbsent(player.getUniqueId(), id -> new PlaceholderRegistry());
     }
 
+    /**
+     * Replaces placeholders in the input text using the provided placeholder map.
+     * Placeholders have the form %key% or %key:defaultValue% where defaultValue is used if the key is missing.
+     *
+     * @param text         the input text containing placeholders
+     * @param placeholders a map of placeholder keys to replacement strings
+     * @return the text with placeholders replaced
+     */
     private String replacePlaceholders(String text, Map<String, String> placeholders) {
         Matcher matcher = PLACEHOLDER_PATTERN.matcher(text);
         StringBuffer sb = new StringBuffer();
@@ -106,15 +147,38 @@ public class LanguageManager {
         return sb.toString();
     }
 
+    /**
+     * Gets the language key for a player based on their locale.
+     * Extracts the language part before underscore and converts to lowercase.
+     *
+     * @param player the player whose language key is requested
+     * @return the language key (e.g. "en", "de")
+     */
     public String getPlayerLanguageKey(Player player) {
         String locale = player.getLocale();
         return locale.split("_")[0].toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Translates a message path for the given player using global placeholders.
+     *
+     * @param player the player for whom to translate
+     * @param path   the path/key in the language file
+     * @return the translated and colorized string, or error message if missing
+     */
     public String translate(Player player, String path) {
         return translate(player, path, Map.of(), true);
     }
 
+    /**
+     * Translates a message path for the given player, optionally using additional placeholders and global placeholders.
+     *
+     * @param player            the player for whom to translate
+     * @param path              the path/key in the language file
+     * @param extraPlaceholders extra placeholders to merge in addition to global ones
+     * @param useGlobal         whether to include the global per-player placeholders
+     * @return the translated and colorized string, or error message if missing
+     */
     public String translate(Player player, String path, Map<String, String> extraPlaceholders, boolean useGlobal) {
         String locale = getPlayerLanguageKey(player);
         YamlConfiguration config = languageCache.getOrDefault(locale, languageCache.get(Locale.ENGLISH));
@@ -130,10 +194,28 @@ public class LanguageManager {
         return ChatColor.translateAlternateColorCodes('&', raw);
     }
 
+    /**
+     * Translates a list of strings from the language file for the given player.
+     *
+     * @param player the player for whom to translate
+     * @param path   the path/key in the language file
+     * @return the list of translated and colorized strings
+     */
     public List<String> translateList(Player player, String path) {
         return translateList(player, path, Map.of(), true);
     }
 
+    /**
+     * Translates a list of strings from the language file for the given player,
+     * with extra placeholders and optional global placeholders.
+     * If the list is empty but a single string exists at path, returns a single-item list.
+     *
+     * @param player            the player for whom to translate
+     * @param path              the path/key in the language file
+     * @param extraPlaceholders extra placeholders to merge in addition to global ones
+     * @param useGlobal         whether to include the global per-player placeholders
+     * @return the list of translated and colorized strings
+     */
     public List<String> translateList(Player player, String path, Map<String, String> extraPlaceholders, boolean useGlobal) {
         String locale = getPlayerLanguageKey(player);
         YamlConfiguration config = languageCache.getOrDefault(locale, languageCache.get(Locale.ENGLISH));
@@ -155,6 +237,11 @@ public class LanguageManager {
         return result;
     }
 
+    /**
+     * Reloads all language files from disk and notifies a command sender if provided.
+     *
+     * @param sender the CommandSender to notify, or null if none
+     */
     public void reloadLanguages(CommandSender sender) {
         loadLanguages();
         IslandVault.getPlugin().getLogger().info("Sprachdateien neu geladen.");
@@ -163,25 +250,53 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * Stores and manages placeholder key-value pairs for translation replacement.
+     * Each player has their own PlaceholderRegistry to hold personalized placeholders.
+     */
     public static class PlaceholderRegistry {
         private final Map<String, String> placeholders = new HashMap<>();
 
+        /**
+         * Sets a placeholder key to a specific value.
+         *
+         * @param key   the placeholder key (without percent signs)
+         * @param value the replacement value for this placeholder
+         */
         public void set(String key, String value) {
             placeholders.put(key, value);
         }
 
+        /**
+         * Adds or updates multiple placeholders at once.
+         *
+         * @param values a map containing placeholder keys and their replacement values
+         */
         public void setAll(Map<String, String> values) {
             placeholders.putAll(values);
         }
 
+        /**
+         * Removes a placeholder by its key.
+         *
+         * @param key the placeholder key to remove
+         */
         public void remove(String key) {
             placeholders.remove(key);
         }
 
+        /**
+         * Returns an unmodifiable view of all stored placeholders.
+         *
+         * @return a map of all placeholder keys and their values
+         */
         public Map<String, String> getAll() {
             return placeholders;
         }
 
+        /**
+         * Clears all stored placeholders.
+         */
         public void clear() {
             placeholders.clear();
         }

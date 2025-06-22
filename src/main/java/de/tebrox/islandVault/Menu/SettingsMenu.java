@@ -21,6 +21,17 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.util.*;
 
+/**
+ * A settings menu for managing island vault preferences.
+ *
+ * This menu allows players to configure:
+ * - Vault access level (based on BentoBox ranks)
+ * - Auto-collection toggle
+ * - Item display filtering
+ * - Particle preview of collection radius
+ *
+ * It also allows returning to a previous menu, if one was specified.
+ */
 public class SettingsMenu extends Menu {
 
     private VaultData vaultData;
@@ -29,6 +40,17 @@ public class SettingsMenu extends Menu {
     private File bentoBoxfile;
     private YamlConfiguration bentoBoxconfig;
 
+    /**
+     * Constructs a new SettingsMenu using the given {@link PlayerMenuUtility}.
+     *
+     * This pulls data from the utility object:
+     * - "vaultData" for vault information
+     * - "previousMenu" to return to the calling menu (if any)
+     *
+     * It also loads the BentoBox locale config file for translating rank names.
+     *
+     * @param playerMenuUtility the player's menu utility context
+     */
     public SettingsMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
 
@@ -64,6 +86,12 @@ public class SettingsMenu extends Menu {
         return true;
     }
 
+    /**
+     * Handles clicks within the settings menu.
+     * Supports left/right/shift click behaviors for various settings buttons.
+     *
+     * @param inventoryClickEvent the inventory click event
+     */
     @Override
     public void handleMenu(InventoryClickEvent inventoryClickEvent) {
         if(inventoryClickEvent.getWhoClicked() instanceof Player) {
@@ -142,6 +170,11 @@ public class SettingsMenu extends Menu {
         }
     }
 
+    /**
+     * Creates the list of interactive buttons for the menu based on current vault state and permissions.
+     *
+     * @return a list of menu buttons
+     */
     private List<ItemStack> createButtonList() {
         List<ItemStack> list = new ArrayList<>();
 
@@ -162,11 +195,21 @@ public class SettingsMenu extends Menu {
         return list;
     }
 
+    /**
+     * Creates lore lines describing the current filter state.
+     *
+     * @return a list of lore lines
+     */
     private List<String> createFilterLore() {
         String stateParam = "menu.item.vaultItemFilter." + (PlayerDataUtils.loadShowOnlyItemsWithAmount(player) ? "availableOnly" : "showAll");
         return IslandVault.getLanguageManager().translateList(player, stateParam);
     }
 
+    /**
+     * Creates lore for the auto-collect toggle item.
+     *
+     * @return list of translated lore strings
+     */
     private List<String> createAutocollectLore() {
         String stateParam = "state." + (vaultData.getAutoCollect() ? "active" : "inactive");
         String state = IslandVault.getLanguageManager().translate(player, stateParam);
@@ -176,6 +219,11 @@ public class SettingsMenu extends Menu {
         return IslandVault.getLanguageManager().translateList(player, "menu.item.radius.itemLore", Map.of("radius", String.valueOf(LuckPermsUtils.getMaxRadiusFromPermissions(vaultData.getOwnerUUID())),"state", state, "booleanState", state2), true);
     }
 
+    /**
+     * Creates lore for the access level toggle item.
+     *
+     * @return list of translated lore strings
+     */
     private List<String> createAccessLore() {
         List<String> lore = new ArrayList<>();
         int currentLevel = vaultData.getAccessLevel();
@@ -198,6 +246,14 @@ public class SettingsMenu extends Menu {
         return lore;
     }
 
+    /**
+     * Returns the next access level in the sorted rank list, in forward or reverse direction.
+     *
+     * @param currentLevel current BentoBox access level
+     * @param accessLevels sorted list of BentoBox rank IDs
+     * @param forward true to cycle forward, false to cycle backward
+     * @return the next rank ID
+     */
     public static int getNextAccessLevel(int currentLevel, List<Integer> accessLevels, boolean forward) {
         if (accessLevels.isEmpty()) {
             throw new IllegalArgumentException("Liste der Levels ist leer.");

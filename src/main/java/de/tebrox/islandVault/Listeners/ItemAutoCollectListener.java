@@ -18,20 +18,44 @@ import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.*;
 
+/**
+ * Listener for automatically collecting items dropped in an island.
+ * <p>
+ * Marks player-dropped items to avoid auto-collecting them,
+ * and attempts to auto-collect eligible items near islands after they spawn.
+ */
 public class ItemAutoCollectListener implements Listener {
     private final IslandVault plugin;
     private final NamespacedKey dropMarkerKey;
 
+    /**
+     * Constructs a new ItemAutoCollectListener.
+     *
+     * @param plugin the main plugin instance
+     */
     public ItemAutoCollectListener(IslandVault plugin) {
         this.plugin = plugin;
         dropMarkerKey = new NamespacedKey(plugin, "player_dropped");
     }
 
+    /**
+     * Marks items dropped by players with persistent data to prevent auto-collection.
+     *
+     * @param event the player drop item event
+     */
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         event.getItemDrop().getPersistentDataContainer().set(dropMarkerKey, PersistentDataType.INTEGER, 1);
     }
 
+    /**
+     * When an item spawns, attempts to auto-collect it into the island's vault
+     * unless it was player-dropped or outside an island.
+     * <p>
+     * Runs the collection attempt asynchronously with a short delay.
+     *
+     * @param event the item spawn event
+     */
     @EventHandler
     public void onItemSpawn(ItemSpawnEvent event) {
         Item item = event.getEntity();
@@ -47,6 +71,13 @@ public class ItemAutoCollectListener implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> tryAutoCollect(item, optIsland.get()), 1L); // 5 Ticks Verzögerung (~0,25 Sek.)
     }
 
+    /**
+     * Tries to auto-collect a spawned item into the island's vault,
+     * considering permissions, location, and grouping rules.
+     *
+     * @param item   the item entity to collect
+     * @param island the island where the item is located
+     */
     private void tryAutoCollect(Item item, Island island) {
         if(!item.isValid() || item.isDead() || IslandVault.getRegionManager().isInAnyRegion(island.getUniqueId(), item.getLocation())) {
             return;

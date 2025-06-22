@@ -13,8 +13,24 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 
+/**
+ * Listener to handle actions when an inventory GUI is closed by a player.
+ * <p>
+ * This listener performs cleanup tasks such as unregistering the player as a viewer of the vault,
+ * saving the vault asynchronously if loaded, and clearing menu-related cached data.
+ */
 public class InventoryCloseListener implements Listener {
 
+    /**
+     * Handles the InventoryCloseEvent when a player closes a GUI.
+     * <p>
+     * If the inventory belongs to a VaultMenu, the player is unregistered as a viewer of the vault.
+     * If the vault is loaded, it is saved asynchronously.
+     * Finally, it clears stored menu data related to the player.
+     *
+     * @param event the inventory close event
+     * @throws RuntimeException if the MenuManager is not properly set up
+     */
     @EventHandler
     public void onGuiClose(InventoryCloseEvent event) {
         Player player = (Player) event.getPlayer();

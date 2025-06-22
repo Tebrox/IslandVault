@@ -60,30 +60,68 @@ public class VaultUpdateEvent extends Event implements Cancellable {
         return island;
     }
 
+    /**
+     * Gets the item stack key (material) involved in the vault update.
+     *
+     * @return the item stack key
+     */
     public ItemStackKey getItemStackKey() {
         return itemStackKey;
     }
 
+    /**
+     * Gets the amount by which the vault contents changed.
+     * Positive values indicate an addition, negative values a removal.
+     *
+     * @return the amount changed
+     */
     public int getAmountChange() {
         return amountChange;
     }
+
+    /**
+     * Indicates whether the vault update was triggered by an automatic collection process.
+     *
+     * @return true if auto-collection caused the update, false otherwise
+     */
     public boolean isAutoCollect() {
         return isAutoCollect;
     }
 
+    /**
+     * Gets the list of handlers for this event.
+     *
+     * @return the handler list
+     */
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
+
+    /**
+     * Gets the static handler list for this event type.
+     *
+     * @return the handler list
+     */
     public static HandlerList getHandlerList() {
         return handlers;
     }
 
+    /**
+     * Checks whether this event has been cancelled.
+     *
+     * @return true if the event is cancelled, false otherwise
+     */
     @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    /**
+     * Sets the cancelled state of this event.
+     *
+     * @param cancelled true to cancel the event, false to allow it
+     */
     @Override
     public void setCancelled(boolean cancelled) {
         this.cancelled = cancelled;

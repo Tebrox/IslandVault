@@ -9,7 +9,30 @@ import org.bukkit.World;
 
 import java.io.IOException;
 
+/**
+ * A custom Gson {@link TypeAdapter} for serializing and deserializing {@link Location} objects.
+ * <p>
+ * This adapter stores only the block coordinates (x, y, z) and the world name.
+ * It omits pitch and yaw, and only supports locations with a non-null world.
+ */
 public class LocationAdapter extends TypeAdapter<Location> {
+
+    /**
+     * Writes a {@link Location} object to JSON.
+     * The output format is:
+     * <pre>
+     * {
+     *   "world": "world_name",
+     *   "x": 100,
+     *   "y": 64,
+     *   "z": 200
+     * }
+     * </pre>
+     *
+     * @param out   the JSON writer
+     * @param value the Location to write, or null
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public void write(JsonWriter out, Location value) throws IOException {
         if (value == null) {
@@ -24,6 +47,14 @@ public class LocationAdapter extends TypeAdapter<Location> {
         out.endObject();
     }
 
+    /**
+     * Reads a {@link Location} object from JSON.
+     * Expects the JSON object to contain the world name and block coordinates.
+     *
+     * @param in the JSON reader
+     * @return the deserialized Location, or null if the world does not exist
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public Location read(JsonReader in) throws IOException {
         String world = null;

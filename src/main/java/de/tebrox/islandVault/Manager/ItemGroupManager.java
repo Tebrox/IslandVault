@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+/**
+ * Manages item permission groups stored in JSON files.
+ * Supports legacy config migration, group registration and lookup.
+ */
 public final class ItemGroupManager {
 
     private static final Map<String, List<String>> permissionGroups = new HashMap<>();
@@ -25,9 +29,11 @@ public final class ItemGroupManager {
     private static Gson gson;
     private static Plugin plugin;
 
-    private ItemGroupManager() {
-    }
-
+    /**
+     * Initializes the manager and loads groups from disk.
+     *
+     * @param pluginInstance The plugin instance
+     */
     public static void init(Plugin pluginInstance) {
         plugin = pluginInstance;
         itemGroupFolder = new File(plugin.getDataFolder(), "ItemGroups");
@@ -37,6 +43,9 @@ public final class ItemGroupManager {
         loadGroups();
     }
 
+    /**
+     * Loads all item groups. Converts old config entries if necessary.
+     */
     private static void loadGroups() {
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("permission_groups");
         if (section != null && !section.getKeys(false).isEmpty()) {
@@ -48,6 +57,11 @@ public final class ItemGroupManager {
         loadGroupsFromJson();
     }
 
+    /**
+     * Converts the legacy config structure to JSON files.
+     *
+     * @param section The old configuration section
+     */
     private static void convertOldConfig(ConfigurationSection section) {
         for (String groupName : section.getKeys(false)) {
             List<String> items = plugin.getConfig().getStringList("permission_groups." + groupName);
@@ -75,6 +89,9 @@ public final class ItemGroupManager {
         }
     }
 
+    /**
+     * Loads all groups from their corresponding JSON files.
+     */
     private static void loadGroupsFromJson() {
         permissionGroups.clear();
 
@@ -104,10 +121,21 @@ public final class ItemGroupManager {
         }
     }
 
+    /**
+     * Returns all loaded permission groups.
+     *
+     * @return Map of group names to material lists
+     */
     public static Map<String, List<String>> getPermissionGroups() {
         return permissionGroups;
     }
 
+    /**
+     * Saves or updates a group and writes it to disk.
+     *
+     * @param groupName The name of the group
+     * @param items     The list of materials
+     */
     public static void saveGroup(String groupName, List<String> items) {
         File file = new File(itemGroupFolder, groupName.toLowerCase() + ".json");
         try (FileWriter writer = new FileWriter(file)) {
@@ -129,6 +157,9 @@ public final class ItemGroupManager {
         }
     }
 
+    /**
+     * Reloads all groups from disk.
+     */
     public static void deleteGroup(String groupName) {
         permissionGroups.remove(groupName);
         File file = new File(itemGroupFolder, groupName.toLowerCase() + ".json");
@@ -141,10 +172,20 @@ public final class ItemGroupManager {
         }
     }
 
+
+    /**
+     * Reloads all groups from disk.
+     */
     public static void reloadGroups() {
         loadGroups();
     }
 
+    /**
+     * Finds all group names that contain a specific material.
+     *
+     * @param materialToFind The material name to search for
+     * @return List of group names that contain the material
+     */
     public static List<String> findGroupsWithMaterial(String materialToFind) {
         List<String> result = new ArrayList<>();
 

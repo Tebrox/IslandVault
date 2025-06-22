@@ -18,14 +18,31 @@ import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.UUID;
 
+/**
+ * Listener for island-related player events.
+ * <p>
+ * Handles player entering and exiting islands as well as player join and quit events.
+ * Manages loading, saving, and tracking of vaults and player island assignments.
+ */
 public class IslandListener implements Listener {
 
     private final Addon addon;
 
+    /**
+     * Constructs a new IslandListener and initializes the addon reference.
+     */
     public IslandListener() {
         this.addon = BentoBox.getInstance().getAddonsManager().getAddonByName("AOneBlock").orElse(null);
     }
 
+    /**
+     * Called when a player enters an island.
+     * <p>
+     * Loads or creates the vault for the island if it is empty,
+     * and assigns the player to the island in the tracker.
+     *
+     * @param event the island enter event
+     */
     @EventHandler
     public void onIslandEnter(IslandEnterEvent event) {
         UUID playerUUID = event.getPlayerUUID();
@@ -43,6 +60,15 @@ public class IslandListener implements Listener {
         }
     }
 
+    /**
+     * Called when a player joins the server.
+     * <p>
+     * Sets up language placeholders for the player,
+     * loads or creates the vault if the player is on an island,
+     * and tracks the player's island.
+     *
+     * @param event the player join event
+     */
     @EventHandler
     public void onIslandExit(IslandExitEvent event) {
         UUID playerUUID = event.getPlayerUUID();
@@ -57,6 +83,14 @@ public class IslandListener implements Listener {
         }
     }
 
+    /**
+     * Called when a player quits the server.
+     * <p>
+     * Removes the player from the island tracker,
+     * and saves the vault asynchronously if the island is empty after the player leaves.
+     *
+     * @param event the player quit event
+     */
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();

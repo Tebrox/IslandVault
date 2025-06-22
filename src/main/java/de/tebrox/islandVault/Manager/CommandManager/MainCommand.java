@@ -9,12 +9,25 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Abstract base class for handling main plugin commands with subcommands.
+ * <p>
+ * Provides execution and tab-completion logic for subcommands,
+ * permission checking, and a main (help) subcommand fallback.
+ */
 public abstract class MainCommand implements TabExecutor {
     protected final Set<SubCommand> subCommands = new HashSet<>();
     protected final String noPermMessage;
     protected final ArgumentMatcher argumentMatcher;
     protected final String mainSubcommand;
 
+    /**
+     * Constructs the main command with a custom no-permission message and argument matcher.
+     *
+     * @param noPermMessage   Message to show if the sender lacks permission
+     * @param argumentMatcher Matcher for filtering tab completions
+     * @param mainSubcommand  Name of the default/fallback subcommand (e.g. "help")
+     */
     public MainCommand(String noPermMessage, ArgumentMatcher argumentMatcher, String mainSubcommand) {
         this.noPermMessage = noPermMessage;
         this.argumentMatcher = argumentMatcher;
@@ -23,6 +36,15 @@ public abstract class MainCommand implements TabExecutor {
         registerSubCommands();
     }
 
+    /**
+     * Executes a subcommand based on the given arguments.
+     *
+     * @param sender  the command sender
+     * @param command the command
+     * @param label   the command label
+     * @param args    the command arguments
+     * @return true if handled successfully, false otherwise
+     */
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         /* Send sender a help if he doesn't use any subCommand and has permission for the help subCommand */
@@ -59,6 +81,12 @@ public abstract class MainCommand implements TabExecutor {
         return true;
     }
 
+    /**
+     * Returns a list of subcommands visible to the given sender (used for help or GUI).
+     *
+     * @param sender the command sender
+     * @return list of visible subcommands
+     */
     public List<SubCommand> getVisibleSubCommands(CommandSender sender) {
         return subCommands.stream()
                 // Filter: confirmremove und cancelremove sollen nicht in TabCompletion auftauchen
@@ -73,6 +101,9 @@ public abstract class MainCommand implements TabExecutor {
                 .toList();
     }
 
+    /**
+     * Provides tab completion logic for subcommands and their arguments.
+     */
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
     {

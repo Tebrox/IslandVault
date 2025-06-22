@@ -20,6 +20,12 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Manages vault data for islands, including asynchronous loading, saving,
+ * caching, and migration from old YAML format to JSON.
+ *
+ * Vaults are stored per island and owner UUID, and cached in memory for fast access.
+ */
 public class VaultManager {
 
     private final IslandVault plugin;
@@ -28,6 +34,12 @@ public class VaultManager {
 
     private final Map<String, VaultData> cache = new ConcurrentHashMap<>();
 
+    /**
+     * Constructs a VaultManager for the given plugin instance,
+     * creating the vault storage folder if necessary.
+     *
+     * @param plugin the plugin instance
+     */
     public VaultManager(IslandVault plugin) {
         this.plugin = plugin;
         this.vaultFolder = new File(plugin.getDataFolder(), "vaults");
@@ -40,6 +52,14 @@ public class VaultManager {
                 .create();
     }
 
+    /**
+     * Asynchronously gets the VaultData for the given island ID and owner UUID.
+     * Returns cached data if available, otherwise loads or creates a new vault.
+     *
+     * @param islandId the island ID
+     * @param ownerUUID the owner's UUID
+     * @return a CompletableFuture completing with the VaultData or null on failure
+     */
     public CompletableFuture<VaultData> getVaultAsync(String islandId, UUID ownerUUID) {
         // Cache-Hit
         if (cache.containsKey(islandId)) {
@@ -50,11 +70,22 @@ public class VaultManager {
         return CompletableFuture.supplyAsync(() -> loadOrCreateVault(islandId, ownerUUID));
     }
 
+    /**
+     * Asynchronously saves the vault data associated with the given island ID and owner name.
+     *
+     * @param islandId the island ID
+     * @param ownerName the owner's name (currently unused in save method)
+     */
     public void saveVaultAsync(String islandId, String ownerName) {
         VaultData data = cache.get(islandId);
         saveVaultAsync(data);
     }
 
+    /**
+     * Asynchronously saves the given VaultData to disk.
+     *
+     * @param data the VaultData to save
+     */
     public void saveVaultAsync(VaultData data) {
         if (data == null) return;
 
@@ -66,6 +97,12 @@ public class VaultManager {
         }.runTaskAsynchronously(plugin);
     }
 
+    /**
+     * Unloads the vault from cache and saves it synchronously.
+     *
+     * @param islandId the island ID
+     * @param ownerUUID the owner's UUID
+     */
     public void unloadVault(String islandId, UUID ownerUUID) {
         VaultData data = cache.remove(islandId);
         if (data != null) {
@@ -73,6 +110,9 @@ public class VaultManager {
         }
     }
 
+    /**
+     * Saves all cached vaults to disk and clears the cache.
+     */
     public void flushAll() {
         for (Map.Entry<String, VaultData> entry : cache.entrySet()) {
             String islandId = entry.getKey();
@@ -82,6 +122,14 @@ public class VaultManager {
         cache.clear();
     }
 
+    /**
+     * Loads a VaultData from disk or creates a new one if none exists.
+     * Converts old YAML format to JSON if necessary.
+     *
+     * @param islandId the island ID
+     * @param ownerUUID the owner's UUID
+     * @return the loaded or newly created VaultData, or null if loading failed
+     */
     public VaultData loadOrCreateVault(String islandId, UUID ownerUUID) {
         File jsonFile = getJsonFile(ownerUUID, islandId);
         File yamlFile = getYamlFile(ownerUUID, islandId);
@@ -152,15 +200,33 @@ public class VaultManager {
         return "unknownOwner";
     }
 
+    /**
+     * Checks if a vault for the given owner name is currently cached.
+     *
+     * @param ownerName the owner's name
+     * @return true if a vault for the owner is cached, false otherwise
+     */
     public boolean isOwnerInCache(String ownerName) {
         return cache.values().stream()
                 .anyMatch(data -> ownerName.equalsIgnoreCase(data.getOwnerName()));
     }
 
+    /**
+     * Checks if a vault for the given island ID is currently loaded in cache.
+     *
+     * @param islandId the island ID
+     * @return true if loaded, false otherwise
+     */
     public boolean isVaultLoaded(String islandId) {
         return cache.containsKey(islandId);
     }
 
+    /**
+     * Gets the cached vault for the given island ID.
+     *
+     * @param islandId the island ID
+     * @return the cached VaultData or null if not loaded
+     */
     public VaultData getCachedVault(String islandId) {
         return cache.get(islandId);
     }

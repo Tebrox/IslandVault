@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Utils.ItemStackKey;
 import de.tebrox.islandVault.Utils.ItemStackKeyMapAdapter;
+import de.tebrox.islandVault.Utils.PluginLogger;
 import de.tebrox.islandVault.Utils.VaultDataConverter;
 import de.tebrox.islandVault.VaultData;
 import org.bukkit.Bukkit;
@@ -138,7 +139,7 @@ public class VaultManager {
         if (yamlFile.exists() && !jsonFile.exists()) {
             boolean converted = new VaultDataConverter(plugin).convertIfOldFormat(ownerUUID, islandId, yamlFile);
             if (!converted) {
-                plugin.getLogger().warning("Migration fehlgeschlagen für Vault von " + Bukkit.getOfflinePlayer(ownerUUID).getName() + " (" + islandId + ")");
+                PluginLogger.warning("Migration fehlgeschlagen für Vault von " + Bukkit.getOfflinePlayer(ownerUUID).getName() + " (" + islandId + ")");
                 return null; // <-- WICHTIG: Fehler zurückgeben
             }
         }
@@ -153,7 +154,7 @@ public class VaultManager {
                 data = gson.fromJson(reader, VaultData.class);
                 if (data == null) data = new VaultData(islandId, ownerUUID);
             } catch (IOException ex) {
-                plugin.getLogger().warning("Fehler beim Laden von " + jsonFile.getName() + ": " + ex.getMessage());
+                PluginLogger.warning("Fehler beim Laden von " + jsonFile.getName() + ": " + ex.getMessage());
                 return null;
             }
         } else {
@@ -173,7 +174,7 @@ public class VaultManager {
                     .create();
             gson.toJson(data, writer);
         } catch (IOException ex) {
-            plugin.getLogger().severe("Konnte Vault " + jsonFile.getName() + " nicht speichern: " + ex.getMessage());
+            PluginLogger.error("Konnte Vault " + jsonFile.getName() + " nicht speichern: " + ex.getMessage());
         }
     }
 

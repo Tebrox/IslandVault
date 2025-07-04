@@ -97,7 +97,7 @@ public class VaultMenu extends PaginatedMenu {
             lore = IslandVault.getLanguageManager().translateList(player, "menu.item.vaultItem.itemLore", Map.of("amount", String.valueOf(vaultData.getAmount(item)), "maxStackSize", String.valueOf(item.getMaxStackSize())), true);
 
             // Zusätzliche OP-Lore, falls OP
-            if (isOp) {
+            if (isOp && IslandVault.getPlugin().isDebug()) {
                 lore.add("§8§m------------------------");
                 lore.add("§6§lDEBUG-INFO");
                 lore.add("§7Material: §f" + item.getType());
@@ -142,147 +142,167 @@ public class VaultMenu extends PaginatedMenu {
     }
 
     @Override
-    public void handleMenu(InventoryClickEvent inventoryClickEvent) throws MenuManagerNotSetupException, MenuManagerException {
-        if(inventoryClickEvent.getWhoClicked() instanceof Player player) {
-            Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
-            if(island == null) return;
+    public void handleMenu(InventoryClickEvent event) throws MenuManagerNotSetupException, MenuManagerException {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
 
-            if(inventoryClickEvent.getClickedInventory() == player.getInventory()) {
-                int slot = inventoryClickEvent.getSlot();
-                ItemStack item = inventoryClickEvent.getCurrentItem();
-                if(inventoryClickEvent.isShiftClick()) {
-                    inventoryClickEvent.setCancelled(true);
-                    if(inventoryClickEvent.isLeftClick()) {
-                        if(vaultData.add(item, item.getAmount())) {
-                            refreshData();
+        Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
+        if (island == null) return;
+
+        // Klick im Spieler-Inventar (zum Einlagern mit Shift-Klick)
+        if (event.getClickedInventory() == player.getInventory()) {
+            ItemStack clickedItem = event.getCurrentItem();
+            int slot = event.getSlot();
+
+            if (clickedItem == null || clickedItem.getType().isAir()) return;
+
+            if (event.isShiftClick()) {
+                event.setCancelled(true);
+                if (event.isLeftClick() || event.isRightClick()) {
+                    int amountToAdd = clickedItem.getAmount();
+                    if (vaultData.add(clickedItem, amountToAdd)) {
+                        refreshData();
+                        if (event.isLeftClick()) {
                             player.getInventory().setItem(slot, null);
-                        }
-                    }else if(inventoryClickEvent.isRightClick()) {
-                        if(vaultData.add(item, item.getAmount())) {
-                            refreshData();
-                            ItemStack tempItem = item.clone();
-                            tempItem.setAmount(tempItem.getAmount() - 1);
-                            player.getInventory().setItem(slot, tempItem);
+                        } else if (event.isRightClick()) {
+                            ItemStack temp = clickedItem.clone();
+                            temp.setAmount(temp.getAmount() - 1);
+                            if (temp.getAmount() <= 0) {
+                                player.getInventory().setItem(slot, null);
+                            } else {
+                                player.getInventory().setItem(slot, temp);
+                            }
                         }
                     }
                 }
             }
+            return;
+        }
 
-            if(inventoryClickEvent.getClickedInventory() != player.getInventory()) {
-                int slot = inventoryClickEvent.getSlot();
-                ItemStack cursor = inventoryClickEvent.getCursor();
-                ItemStack item = inventoryClickEvent.getCurrentItem();
+        // Klick im Vault-Menü Inventar
+        if (event.getClickedInventory() != player.getInventory()) {
+            int slot = event.getSlot();
+            ItemStack cursor = event.getCursor();
+            ItemStack currentItem = event.getCurrentItem();
 
+            boolean isLeftClick = event.isLeftClick();
+            boolean isRightClick = event.isRightClick();
+            boolean isShiftClick = event.isShiftClick();
 
-                if(slot >= 45 && slot <= 54) {
-                    inventoryClickEvent.setCancelled(true);
-                    switch (slot) {
-                        case 45:
-                            if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
-                                if(inventoryClickEvent.isLeftClick()) {
-                                    int nextIndex = (options.indexOf(currentOption) + 1) % options.size();
-                                    currentOption = options.get(nextIndex);
-                                    PlayerDataUtils.saveSortSettings(playerMenuUtility.getOwner(), currentOption, currentDirection);
-                                }else if(inventoryClickEvent.isRightClick()) {
-                                    currentDirection = (currentDirection == ItemSortUtil.SortDirection.ASCENDING)
-                                            ? ItemSortUtil.SortDirection.DESCENDING
-                                            : ItemSortUtil.SortDirection.ASCENDING;
-                                    PlayerDataUtils.saveSortSettings(playerMenuUtility.getOwner(), currentOption, currentDirection);
-                                }
-                                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
-                                refreshData();
-                            }
-                            break;
-                        case 47:
-                            if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
-                                firstPage();
-                                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
-                            }
-                            break;
-                        case 48:
-                            if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
-                                prevPage();
-                                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
-                            }
-                            break;
-                        case 49:
-                            player.closeInventory();
-                            player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
-                            break;
-                        case 50:
-                            if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
-                                nextPage();
-                                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
-                            }
-                            break;
-                        case 51:
-                            if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
-                                lastPage();
-                                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
-                            }
-                            break;
-                        case 53:
-                            if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
-                                MenuManager.getPlayerMenuUtility(player).setData("previousMenu", VaultMenu.class);
-                                MenuManager.getPlayerMenuUtility(player).setData("vaultData", vaultData);
-                                MenuManager.openMenu(SettingsMenu.class, player);
-                                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
-                            }
-                    }
-                }
+            // Menü-Buttons in den Slots 45-54 abfangen
+            if (slot >= 45 && slot <= 54) {
+                event.setCancelled(true);
 
-                //Vault Slots
-                else {
-                    inventoryClickEvent.setCancelled(true);
-                    boolean isLeftClick = inventoryClickEvent.isLeftClick();
-                    boolean isRightClick = inventoryClickEvent.isRightClick();
-                    boolean isShiftClick = inventoryClickEvent.isShiftClick();
+                if (currentItem == null || currentItem.isSimilar(FILLER_GLASS)) return;
 
-                    if(cursor != null && cursor.getType() == item.getType() && !isShiftClick && isRightClick) {
-                        int cursorAmount = cursor.getAmount();
-
-                        ItemStack tempItem = vaultData.extractItem(ItemStackKey.of(cursor), 1);
-                        if(tempItem != null) {
-                            ItemStack handItem = new ItemStack(cursor.getType(), cursorAmount + tempItem.getAmount());
-                            player.setItemOnCursor(handItem);
-
-                            refreshData();
+                switch (slot) {
+                    case 45:
+                        if (isLeftClick) {
+                            int nextIndex = (options.indexOf(currentOption) + 1) % options.size();
+                            currentOption = options.get(nextIndex);
+                        } else if (isRightClick) {
+                            currentDirection = (currentDirection == ItemSortUtil.SortDirection.ASCENDING)
+                                    ? ItemSortUtil.SortDirection.DESCENDING
+                                    : ItemSortUtil.SortDirection.ASCENDING;
                         }
-                    } else if (cursor == null || cursor.getType() == Material.AIR && item != null) { //taking item out of dsu
-
-                        ItemStack handItem;
-                        int amount = 0;
-                        if(isLeftClick) {
-                            amount = item.getMaxStackSize();
-                        }else if (isRightClick) {
-                            amount = 1;
-                        }
-                        handItem = vaultData.extractItem(ItemStackKey.of(item), amount);
-
-                        if(handItem == null) return;
-
-                        if(!isShiftClick) {
-                            player.setItemOnCursor(handItem);
-                        }else{
-                            if(player.getInventory().firstEmpty() != -1){
-                                player.getInventory().addItem(handItem);
-                            }
-                        }
+                        PlayerDataUtils.saveSortSettings(player, currentOption, currentDirection);
+                        SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
                         refreshData();
+                        break;
 
-                    } else if (cursor != null && cursor.getType() != Material.AIR) {
-                        Material material = cursor.getType();
-                        int amount = cursor.getAmount();
+                    case 47:
+                        firstPage();
+                        SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
+                        break;
 
-                        if(vaultData.add(item, amount)) {
-                            refreshData();
-                            player.setItemOnCursor(null);
-                        }
+                    case 48:
+                        prevPage();
+                        SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
+                        break;
+
+                    case 49:
+                        player.closeInventory();
+                        SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
+                        break;
+
+                    case 50:
+                        nextPage();
+                        SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
+                        break;
+
+                    case 51:
+                        lastPage();
+                        SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
+                        break;
+
+                    case 53:
+                        MenuManager.getPlayerMenuUtility(player).setData("previousMenu", VaultMenu.class);
+                        MenuManager.getPlayerMenuUtility(player).setData("vaultData", vaultData);
+                        MenuManager.openMenu(SettingsMenu.class, player);
+                        SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
+                        break;
+
+                    default:
+                        // Kein weiterer Fall nötig
+                }
+                return;
+            }
+
+            // Slots mit Items im Vault (0-44)
+            event.setCancelled(true);
+
+            // Defensive Null-Checks
+            if (currentItem == null || currentItem.getType().isAir()) return;
+
+            // Fall 1: Rechtsklick mit einem Item auf Cursor gleicher Typ (kein Shift) => 1 Item hinzufügen
+            if (cursor != null && !cursor.getType().isAir()
+                    && cursor.getType() == currentItem.getType()
+                    && !isShiftClick && isRightClick) {
+
+                if(cursor.getAmount() + 1 > cursor.getMaxStackSize()) return;
+
+                ItemStack tempExtracted = vaultData.extractItem(ItemStackKey.of(cursor), 1);
+                if (tempExtracted != null) {
+                    ItemStack newCursor = new ItemStack(cursor.getType(), cursor.getAmount() + tempExtracted.getAmount());
+                    player.setItemOnCursor(newCursor);
+                    refreshData();
+                }
+                return;
+            }
+
+            // Fall 2: Cursor leer, Item anklicken => Item entnehmen
+            if ((cursor == null || cursor.getType().isAir()) && currentItem != null) {
+                int amountToExtract = isLeftClick ? currentItem.getMaxStackSize() : 1;
+
+                ItemStack extracted = vaultData.extractItem(ItemStackKey.of(currentItem), amountToExtract);
+                if (extracted == null) return;
+
+                if (!isShiftClick) {
+                    player.setItemOnCursor(extracted);
+                } else {
+                    if (player.getInventory().firstEmpty() != -1) {
+                        player.getInventory().addItem(extracted);
+                    } else {
+                        // Kein Platz im Inventar, Item in Cursor setzen als Fallback
+                        player.setItemOnCursor(extracted);
                     }
                 }
+                refreshData();
+                return;
+            }
+
+            // Fall 3: Cursor hält Item (nicht Luft), Item anklicken => Item zurücklegen
+            if (cursor != null && !cursor.getType().isAir() && isLeftClick) {
+                int amountToAdd = cursor.getAmount();
+
+                if (vaultData.add(cursor, amountToAdd)) {
+                    refreshData();
+                    player.setItemOnCursor(null);
+                }
+                return;
             }
         }
     }
+
 
     /**
      * @param material    The material to base the ItemStack on
@@ -357,29 +377,25 @@ public class VaultMenu extends PaginatedMenu {
 
         inventory.setItem(45, makeSortItem(Material.COMPASS));
 
+        inventory.setItem(47, FILLER_GLASS);
         if(getCurrentPage() > 1) {
-            // First page button
-            inventory.setItem(47, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.firstPage")), false, true));
             // Previous page button
             texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTE4NWM5N2RiYjgzNTNkZTY1MjY5OGQyNGI2NDMyN2I3OTNhM2YzMmE5OGJlNjdiNzE5ZmJlZGFiMzVlIn19fQ==";
-            inventory.setItem(48, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.previousPage")), false, false));
+            inventory.setItem(48, makeSkullItem(texture, IslandVault.getLanguageManager().translate(player, "menu.previousPage", Map.of("currentPage", String.valueOf(getCurrentPage()), "previousPage", String.valueOf(getCurrentPage() - 1), "nextPage", String.valueOf(getCurrentPage() + 1), "maxPage", String.valueOf(getTotalPages()))), false, false));
             //inventory.setItem(48, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.previousPage")), false, false));
         }else{
-            inventory.setItem(47, FILLER_GLASS);
             inventory.setItem(48, FILLER_GLASS);
         }
 
         if(getCurrentPage() < getTotalPages()) {
             texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzFjMGVkZWRkNzExNWZjMWIyM2Q1MWNlOTY2MzU4YjI3MTk1ZGFmMjZlYmI2ZTQ1YTY2YzM0YzY5YzM0MDkxIn19fQ==";
             // Next page button
-            inventory.setItem(50, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.nextPage")), false, false));
-            // Last page button
-            inventory.setItem(51, makeItem(Material.BOOK, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.lastPage")), false, true));
+            inventory.setItem(50, makeSkullItem(texture, IslandVault.getLanguageManager().translate(player, "menu.nextPage", Map.of("currentPage", String.valueOf(getCurrentPage()), "previousPage", String.valueOf(getCurrentPage() - 1), "nextPage", String.valueOf(getCurrentPage() + 1), "maxPage", String.valueOf(getTotalPages()))), false, false));
         }else{
             inventory.setItem(50, FILLER_GLASS);
-            inventory.setItem(51, FILLER_GLASS);
-        }
 
+        }
+        inventory.setItem(51, FILLER_GLASS);
         // Close button
         texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2FkNTMyYWRiYTliNGY5ZWZlYjQ3ZjRkNmI0ZmMxZWQyZTZkZTVjY2FhNzc5ZjU1NTk4ZTFlYWVjYWVlZjg5MiJ9fX0=";
         inventory.setItem(49, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.close")), false, false));
@@ -389,7 +405,7 @@ public class VaultMenu extends PaginatedMenu {
             inventory.setItem(53, makeSkullItem(texture, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.settings")), false, false));
         }
 
-         for (int i = 45; i < 54; i++) {
+        for (int i = 45; i < 54; i++) {
             if (inventory.getItem(i) == null) {
                 inventory.setItem(i, FILLER_GLASS);
             }

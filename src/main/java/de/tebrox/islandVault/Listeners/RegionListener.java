@@ -112,10 +112,18 @@ public class RegionListener implements Listener {
             case "pos1":
                 event.setCancelled(true);
                 IslandVault.getRegionManager().getSession(player.getUniqueId()).setPos1(player.getLocation());
+                player.sendMessage("§aPosition 1 gesetzt: §e" + loc(player.getLocation()));
                 break;
             case "pos2":
                 event.setCancelled(true);
                 IslandVault.getRegionManager().getSession(player.getUniqueId()).setPos2(player.getLocation());
+                player.sendMessage("§aPosition 2 gesetzt: §e" + loc(player.getLocation()));
+                break;
+            case "abbrechen":
+                event.setCancelled(true);
+                player.sendMessage("§aRegionerstellung wurde abgebrochen");
+                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1.2f);
+                IslandVault.getRegionManager().endSession(uuid);
                 break;
             default:
         }
@@ -142,7 +150,7 @@ public class RegionListener implements Listener {
         } else {
             color = Color.RED;
         }
-        IslandVault.getParticleManager().showBox(Bukkit.getPlayer(playerId), "regionBox", pos1, pos2, Particle.DUST, color, null);
+        IslandVault.getParticleManager().showBox(Bukkit.getPlayer(playerId), "regionBox", pos1, pos2, Particle.DUST, color, null, false);
     }
 
     /**

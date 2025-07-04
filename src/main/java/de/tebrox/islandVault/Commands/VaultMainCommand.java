@@ -5,6 +5,7 @@ import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
 import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
 import de.tebrox.islandVault.Manager.CommandManager.argumentMatcher.ContainingAllCharsOfStringArgumentMatcher;
 import de.tebrox.islandVault.Utils.PermissionUtils;
+import de.tebrox.islandVault.Utils.PluginLogger;
 import org.bukkit.permissions.PermissionDefault;
 
 import java.util.logging.Level;
@@ -33,9 +34,9 @@ public class VaultMainCommand extends MainCommand {
             if(cmd.getPermission() == null || cmd.getPermission().isEmpty()) continue;
 
             if(PermissionUtils.registerPermission(cmd.getPermission(), cmd.getDescription(), permissionDefault)) {
-                IslandVault.getPlugin().getLogger().log(Level.INFO, "Registered permission: " + cmd.getSyntax());
+                PluginLogger.info("Registered command: " + cmd.getSyntax());
             }else{
-                IslandVault.getPlugin().getLogger().warning("Cannot register permission: " + cmd.getSyntax());
+                PluginLogger.warning("Cannot register command: " + cmd.getSyntax());
             }
 
         }

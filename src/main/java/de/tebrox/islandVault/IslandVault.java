@@ -1,7 +1,5 @@
 package de.tebrox.islandVault;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import de.tebrox.islandVault.Commands.AdminCommand.VaultAdminMainCommand;
 import de.tebrox.islandVault.Commands.VaultMainCommand;
 import de.tebrox.islandVault.Enums.Permissions;
@@ -12,7 +10,6 @@ import de.tebrox.islandVault.Utils.*;
 import de.tebrox.islandvault.api.*;
 import me.kodysimpson.simpapi.menu.MenuManager;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -22,8 +19,6 @@ import world.bentobox.bentobox.managers.IslandsManager;
 
 import java.io.*;
 import java.util.*;
-import java.util.logging.*;
-import java.util.logging.Formatter;
 
 public final class IslandVault extends JavaPlugin {
 
@@ -39,8 +34,8 @@ public final class IslandVault extends JavaPlugin {
 
     //Permission
     private static PermissionItemRegistry permissionItemRegistry;
-    private static HashMap<String, List<String>> permissionGroups = new HashMap<>();
-    private Map<String, Integer> radiusPermissionMap = new HashMap<>();
+    private static final HashMap<String, List<String>> permissionGroups = new HashMap<>();
+    private final Map<String, Integer> radiusPermissionMap = new HashMap<>();
 
     //Commands
     private static MainCommand mainCommand;
@@ -51,12 +46,13 @@ public final class IslandVault extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        setupLogger();
         plugin = this;
 
         if(!plugin.getDataFolder().exists()) {
             plugin.getDataFolder().mkdirs();
         }
+
+        PluginLogger.init(plugin.getLogger(), false);
 
         saveDefaultConfig(); // stellt sicher, dass config.yml im JAR vorhanden ist
 
@@ -65,7 +61,7 @@ public final class IslandVault extends JavaPlugin {
 
         InputStream defaultConfigStream = getResource("config.yml");
         if (defaultConfigStream == null) {
-            getLogger().severe("Default config.yml konnte nicht gefunden werden!");
+            PluginLogger.error("Default config.yml konnte nicht gefunden werden!");
             return;
         }
 
@@ -82,13 +78,13 @@ public final class IslandVault extends JavaPlugin {
 
 
         if (!PluginDependencyChecker.allRequiredPresent()) {
-            getLogger().severe("Missing required plugins: " + PluginDependencyChecker.getFormattedList(PluginDependencyChecker.getMissingRequiredPlugins()));
+            PluginLogger.error("Missing required plugins: " + PluginDependencyChecker.getFormattedList(PluginDependencyChecker.getMissingRequiredPlugins()));
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
         if (!PluginDependencyChecker.getMissingOptionalPlugins().isEmpty()) {
-            getLogger().warning("Missing optional plugins: " + PluginDependencyChecker.getFormattedList(PluginDependencyChecker.getMissingOptionalPlugins()));
+            PluginLogger.warning("Missing optional plugins: " + PluginDependencyChecker.getFormattedList(PluginDependencyChecker.getMissingOptionalPlugins()));
         }
 
         BentoBoxRanks.loadRanks();
@@ -109,7 +105,7 @@ public final class IslandVault extends JavaPlugin {
 
         registerCommandsAndEvents();
 
-        registerPermissions();
+        //registerPermissions();
 
         loadAutoCollectPermissions();
 
@@ -149,35 +145,10 @@ public final class IslandVault extends JavaPlugin {
     public static PermissionItemRegistry getPermissionItemRegistry() { return permissionItemRegistry; }
     public static HashMap<String, List<String>> getPermissionGroups() { return permissionGroups; }
 
-    private void setupLogger() {
-
-        Logger logger = getLogger(); // Verwende den Bukkit-Logger
-
-        // Alle bestehenden Handler durchgehen und Formatter setzen
-        for (Handler handler : logger.getHandlers()) {
-            handler.setFormatter(new Formatter() {
-                private final String RESET = "\u001B[0m";
-                private final String GREEN = "\u001B[32m";
-
-                @Override
-                public String format(LogRecord record) {
-                    String prefix = "[IslandVault] ";
-
-                    // Optional: Level anzeigen, aber nur wenn nicht INFO
-                    if (record.getLevel() != Level.INFO) {
-                        prefix += record.getLevel().getName() + ": ";
-                    }
-
-                    return prefix + record.getMessage() + "\n";
-                }
-            });
-        }
-        getLogger().setParent(logger);
-    }
 
     private void loadAddons() {
         for (AddonProvider provider : AddonRegistry.getAllProviders()) {
-            getLogger().info("Addon geladen: " + provider + " mit " + provider.getAllItems().size() + " Items.");
+            PluginLogger.info("Addon geladen: " + provider + " mit " + provider.getAllItems().size() + " Items.");
         }
     }
 
@@ -185,9 +156,7 @@ public final class IslandVault extends JavaPlugin {
         for(String id : permissionItemRegistry.getWhitelistedItems().keySet()) {
             String permission = Permissions.VAULT.getLabel() + id;
             if(PermissionUtils.registerPermission(permission, "Vault item " + id, PermissionDefault.FALSE)) {
-                //debugLogger.info("Registered vault item: " + material.toString());
-            }else{
-                //debugLogger.warning("Cannot register vault item: " + material.toString());
+                PluginLogger.debug("Registered vault item: " + id.toString());
             }
         }
     }
@@ -202,7 +171,7 @@ public final class IslandVault extends JavaPlugin {
         AdminVaultLogger adminVaultLogger = new AdminVaultLogger(this);
 
         //getServer().getPluginManager().registerEvents(new OPJoinListener(this), this);
-        getServer().getPluginManager().registerEvents(new InventoryCloseListener(), this);
+        getServer().getPluginManager().registerEvents(new InventoryListener(), this);
         getServer().getPluginManager().registerEvents(new ItemAutoCollectListener(this), this);
         getServer().getPluginManager().registerEvents(new IslandListener(), this);
         getServer().getPluginManager().registerEvents(new VaultEventListener(adminVaultLogger), this);
@@ -216,9 +185,9 @@ public final class IslandVault extends JavaPlugin {
             if (radius > 0) {
                 String permission = Permissions.COLLECT_RADIUS.getLabel() + radius;
                 if (PermissionUtils.registerPermission(permission, "Autocollect radius " + radius, PermissionDefault.FALSE)) {
-                    //debugLogger.info("Registered autocolllect radius " + radius);
+                    PluginLogger.debug("Registered autocolllect radius " + radius);
                 } else {
-                    //debugLogger.warning("Cannot register autocollect radius " + radius);
+                    PluginLogger.debug("Cannot register autocollect radius " + radius);
                 }
                 radiusPermissionMap.put(permission, radius);
             }
@@ -244,15 +213,16 @@ public final class IslandVault extends JavaPlugin {
     public void reloadPluginConfig(CommandSender sender) {
         reloadConfig();
         debug = getConfig().getBoolean("debug", false);
+        PluginLogger.setDebugMode(isDebug());
         if(!firstStart) {
-            getLogger().info("Config geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
+            PluginLogger.info("Config geladen. Debugmodus ist " + (isDebug() ? "aktiviert" : "deaktiviert"));
             firstStart = true;
         }
 
         if(sender != null) {
-            sender.sendMessage("Config neu geladen. Debugmodus ist " + (debug ? "aktiviert" : "deaktiviert"));
+            sender.sendMessage("Config neu geladen. Debugmodus ist " + (isDebug() ? "aktiviert" : "deaktiviert"));
         }
-        registerPermissions();
+        //registerPermissions();
 
     }
 

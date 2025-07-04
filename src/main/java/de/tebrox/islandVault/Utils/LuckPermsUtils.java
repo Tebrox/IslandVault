@@ -9,8 +9,8 @@ import org.bukkit.Material;
 import java.util.UUID;
 
 public class LuckPermsUtils {
-    public static boolean hasPermissionForItem(UUID uuid, Material material) {
-        String perm = "islandvault.vault." + material.name().toLowerCase();
+    public static boolean hasPermissionForItem(UUID uuid, String itemID) {
+        String perm = "islandvault.vault." + itemID;
         return checkPermission(uuid, perm);
     }
 

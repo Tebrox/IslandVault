@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,7 +47,7 @@ public abstract class MainCommand implements TabExecutor {
      * @return true if handled successfully, false otherwise
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         /* Send sender a help if he doesn't use any subCommand and has permission for the help subCommand */
         if (args.length == 0)
         {
@@ -105,7 +106,7 @@ public abstract class MainCommand implements TabExecutor {
      * Provides tab completion logic for subcommands and their arguments.
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args)
     {
         /* Return if there is nothing to tab complete. */
         if (args.length == 0)
@@ -182,7 +183,7 @@ public abstract class MainCommand implements TabExecutor {
     protected abstract void registerSubCommands ();
 
     /**
-     * Returns the help subcommand from subCommands set. By default returns subCommand named "help".
+     * Returns the help subcommand from subCommands set. By default, returns subCommand named "help".
      * @return the help subCommand.
      */
     protected SubCommand getMainSubCommand(String cmd)

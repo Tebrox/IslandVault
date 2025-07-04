@@ -1,15 +1,11 @@
 package de.tebrox.islandVault.Events;
 
 import de.tebrox.islandVault.Utils.ItemStackKey;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.bukkit.inventory.ItemStack;
 import world.bentobox.bentobox.database.objects.Island;
-
-import java.util.UUID;
 
 /**
  * Event triggered when the vault of an island is updated.
@@ -22,6 +18,7 @@ public class VaultUpdateEvent extends Event implements Cancellable {
     private final Island island;
     private final ItemStackKey itemStackKey;
     private final int amountChange;
+    private final int newAmount;
     private final boolean isAutoCollect;
     private boolean cancelled;
 
@@ -34,11 +31,12 @@ public class VaultUpdateEvent extends Event implements Cancellable {
      * @param amountChange the amount changed in the vault (positive or negative)
      * @param isAutoCollect true if the update was caused by auto-collection, false otherwise
      */
-    public VaultUpdateEvent(Player actor, Island island, ItemStackKey itemStackKey, int amountChange, boolean isAutoCollect) {
+    public VaultUpdateEvent(Player actor, Island island, ItemStackKey itemStackKey, int amountChange, int newAmount, boolean isAutoCollect) {
         this.actor = actor;
         this.island = island;
         this.itemStackKey = itemStackKey;
         this.amountChange = amountChange;
+        this.newAmount = newAmount;
         this.isAutoCollect = isAutoCollect;
     }
 
@@ -78,6 +76,8 @@ public class VaultUpdateEvent extends Event implements Cancellable {
     public int getAmountChange() {
         return amountChange;
     }
+
+    public int getNewAmount() { return newAmount; }
 
     /**
      * Indicates whether the vault update was triggered by an automatic collection process.

@@ -2,6 +2,8 @@ package de.tebrox.islandVault.Listeners;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.ItemGroupManager;
+import de.tebrox.islandVault.PermissionItemRegistry;
+import de.tebrox.islandVault.Utils.ItemStackKey;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import de.tebrox.islandVault.VaultData;
 import org.bukkit.*;
@@ -82,7 +84,6 @@ public class ItemAutoCollectListener implements Listener {
         if(!item.isValid() || item.isDead() || IslandVault.getRegionManager().isInAnyRegion(island.getUniqueId(), item.getLocation())) {
             return;
         }
-
         UUID ownerUUID = island.getOwner();
         if (ownerUUID == null) return;
 
@@ -90,17 +91,17 @@ public class ItemAutoCollectListener implements Listener {
         if(!vaultData.getAutoCollect()) {
             return;
         }
-
         int radius = LuckPermsUtils.getMaxRadiusFromPermissions(ownerUUID);
         if (radius <= 0) return;
-
         var center = island.getCenter();
         if (item.getLocation().distanceSquared(center) > radius * radius) return;
 
         ItemStack baseStack = item.getItemStack();
+        ItemStackKey key = ItemStackKey.of(baseStack);
+        String itemID = IslandVault.getPermissionItemRegistry().getId(key).orElse("");
 
         boolean groupPermission = false;
-        List<String> groups = ItemGroupManager.findGroupsWithMaterial(item.getItemStack().getType().toString());
+        List<String> groups = ItemGroupManager.findGroupsWithItemID(itemID);
         if(!groups.isEmpty()) {
             for(String g : groups) {
                 if(LuckPermsUtils.hasPermissionForGroup(ownerUUID, g)) {
@@ -110,8 +111,7 @@ public class ItemAutoCollectListener implements Listener {
             }
         }
 
-        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, baseStack.getType()) && !groupPermission) return;
-
+        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, itemID) && !groupPermission) return;
         List<Item> nearbyItems = item.getWorld().getNearbyEntities(item.getLocation(), 1, 1, 1).stream()
                 .filter(e -> e instanceof Item)
                 .map(e -> (Item) e)

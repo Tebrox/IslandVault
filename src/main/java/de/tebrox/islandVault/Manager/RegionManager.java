@@ -8,6 +8,7 @@ import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Listeners.RegionListener;
 import de.tebrox.islandVault.Region.Region;
 import de.tebrox.islandVault.Region.RegionSession;
+import de.tebrox.islandVault.Utils.PluginLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -30,8 +31,7 @@ public class RegionManager {
     private final Map<String, List<Region>> regionMap = new HashMap<>();
     private final Map<UUID, RegionSession> sessions = new HashMap<>();
     private final File dataFile;
-    private Plugin plugin;
-    private Gson gson;
+    private final Gson gson;
 
     /**
      * Constructs a RegionManager with the given plugin instance,
@@ -40,7 +40,6 @@ public class RegionManager {
      * @param plugin the plugin instance
      */
     public RegionManager(Plugin plugin) {
-        this.plugin = plugin;
         this.dataFile = new File(plugin.getDataFolder(), "regions.json");
         gson = new GsonBuilder()
                 .registerTypeAdapter(Location.class, new LocationAdapter())
@@ -210,8 +209,7 @@ public class RegionManager {
                 regionMap.putAll(loaded);
             }
         } catch (Exception e) {
-            Bukkit.getLogger().severe("Fehler beim Laden der Regionen: " + e.getMessage());
-            e.printStackTrace();
+            PluginLogger.error("Fehler beim Laden der Regionen: " + e.getMessage());
         }
     }
 }

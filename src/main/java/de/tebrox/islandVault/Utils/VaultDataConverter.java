@@ -3,7 +3,6 @@ package de.tebrox.islandVault.Utils;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.VaultData;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -29,7 +28,7 @@ public class VaultDataConverter {
         if (!yamlFile.exists()) return true;
         String ownerName = Bukkit.getOfflinePlayer(ownerUUID).getName();
 
-        IslandVault.getPlugin().getLogger().info("Migriere Vault ins das neue Format von " + ownerName + " (" + islandId + ")");
+        PluginLogger.info("Migriere Vault ins das neue Format von " + ownerName + " (" + islandId + ")");
 
         try {
             YamlConfiguration config = YamlConfiguration.loadConfiguration(yamlFile);

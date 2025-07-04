@@ -8,6 +8,16 @@ import org.bukkit.persistence.PersistentDataType;
 
 public class PlayerDataUtils {
 
+    public static void saveSoundEnabled(Player player, boolean enabled) {
+        PersistentDataContainer container = player.getPersistentDataContainer();
+        container.set(getSoundEnabledKey(), PersistentDataType.BOOLEAN, enabled);
+    }
+
+    public static boolean loadSoundEnabled(Player player) {
+        PersistentDataContainer container = player.getPersistentDataContainer();
+        return container.getOrDefault(getSoundEnabledKey(), PersistentDataType.BOOLEAN, true);
+    }
+
     public static void saveShowOnlyItemsWithAmount(Player player, boolean showWithAmount) {
         PersistentDataContainer container = player.getPersistentDataContainer();
         container.set(getShowItemsWithAmountKey(), PersistentDataType.BOOLEAN, showWithAmount);
@@ -51,6 +61,7 @@ public class PlayerDataUtils {
         }
     }
 
+    public static NamespacedKey getSoundEnabledKey() { return new NamespacedKey(IslandVault.getPlugin(), "soundEnabled"); }
     public static NamespacedKey getSortOptionKey() {
         return new NamespacedKey(IslandVault.getPlugin(), "sort_option");
     }

@@ -3,6 +3,7 @@ package de.tebrox.islandVault.Listeners;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Update.GitHubUpdateChecker;
 import de.tebrox.islandVault.Update.VersionComparator;
+import de.tebrox.islandVault.Utils.PluginLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -15,8 +16,6 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 
-import java.util.logging.Level;
-
 public class OPJoinListener implements Listener {
     private final IslandVault plugin;
 
@@ -26,7 +25,7 @@ public class OPJoinListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        String author = plugin.getDescription().getAuthors().get(0);
+        String author = plugin.getDescription().getAuthors().getFirst();
         String pluginName = plugin.getDescription().getName();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             new GitHubUpdateChecker(author, pluginName).getLatestRelease(latest -> {
@@ -34,8 +33,8 @@ public class OPJoinListener implements Listener {
                 int compare = VersionComparator.compareVersions(current, latest);
 
                 if (compare < 0) {
-                    plugin.getLogger().log(Level.WARNING, "Eine neue Version ist verfügbar: " + latest);
-                    plugin.getLogger().log(Level.WARNING, "Aktuell verwendete Version: " + current);
+                    PluginLogger.warning("Eine neue Version ist verfügbar: " + latest);
+                    PluginLogger.warning("Aktuell verwendete Version: " + current);
 
                     String releaseUrl = "https://github.com/" + author + "/" + pluginName + "/releases/latest";
 

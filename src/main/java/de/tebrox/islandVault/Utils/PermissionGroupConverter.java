@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -59,7 +58,7 @@ public class PermissionGroupConverter {
                 json.add("items", itemArray);
                 gson.toJson(json, writer);
 
-                Bukkit.getLogger().info("[MenuAPI] Gruppe '" + group + "' konvertiert.");
+                PluginLogger.info("[MenuAPI] Gruppe '" + group + "' konvertiert.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -69,7 +68,7 @@ public class PermissionGroupConverter {
         config.set("permission_groups", null);
         try {
             config.save(configFile);
-            Bukkit.getLogger().info("[MenuAPI] Alte Gruppen aus config.yml entfernt.");
+            PluginLogger.info("[MenuAPI] Alte Gruppen aus config.yml entfernt.");
         } catch (IOException e) {
             e.printStackTrace();
         }

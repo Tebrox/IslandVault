@@ -4,12 +4,12 @@ import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Menu.VaultMenu;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.MenuManager;
-import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 
@@ -19,7 +19,7 @@ import world.bentobox.bentobox.database.objects.Island;
  * This listener performs cleanup tasks such as unregistering the player as a viewer of the vault,
  * saving the vault asynchronously if loaded, and clearing menu-related cached data.
  */
-public class InventoryCloseListener implements Listener {
+public class InventoryListener implements Listener {
 
     /**
      * Handles the InventoryCloseEvent when a player closes a GUI.

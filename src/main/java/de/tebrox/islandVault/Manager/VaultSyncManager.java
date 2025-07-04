@@ -4,10 +4,10 @@ import de.tebrox.islandVault.Menu.VaultMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -34,8 +34,8 @@ public class VaultSyncManager {
      * This should be called when a player opens a VaultMenu.
      *
      * @param islandId the ID of the island
-     * @param player the player who opened the menu
-     * @param menu the VaultMenu instance
+     * @param player   the player who opened the menu
+     * @param menu     the VaultMenu instance
      */
     public void registerViewer(String islandId, Player player, VaultMenu menu) {
         openViewers.computeIfAbsent(islandId, k -> ConcurrentHashMap.newKeySet()).add(menu);
@@ -46,7 +46,7 @@ public class VaultSyncManager {
      * This should be called when the player closes the menu or disconnects.
      *
      * @param islandId the ID of the island
-     * @param player the player to unregister
+     * @param player   the player to unregister
      */
     public void unregisterViewer(String islandId, Player player) {
         Set<VaultMenu> menus = openViewers.get(islandId);
@@ -56,6 +56,10 @@ public class VaultSyncManager {
                 openViewers.remove(islandId);
             }
         }
+    }
+
+    public Set<VaultMenu> getViewers(String islandID) {
+        return openViewers.get(islandID);
     }
 
     /**

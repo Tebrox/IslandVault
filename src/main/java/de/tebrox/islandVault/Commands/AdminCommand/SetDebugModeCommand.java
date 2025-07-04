@@ -3,6 +3,7 @@ package de.tebrox.islandVault.Commands.AdminCommand;
 import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
+import de.tebrox.islandVault.Utils.PluginLogger;
 import org.bukkit.command.CommandSender;
 import org.bukkit.permissions.PermissionDefault;
 
@@ -47,12 +48,12 @@ public class SetDebugModeCommand implements SubCommand {
     public void perform(CommandSender sender, String[] args) {
         if(args[0].equalsIgnoreCase("on")) {
             sender.sendMessage("§aDebugmodus aktiviert.");
-            IslandVault.getPlugin().getLogger().info("Debugmodus wurde aktiviert.");
+            PluginLogger.info("Debugmodus wurde aktiviert.");
             IslandVault.getPlugin().setDebugMode(true);
 
         }else if(args[0].equalsIgnoreCase("off")) {
             sender.sendMessage("§aDebugmodus deaktiviert.");
-            IslandVault.getPlugin().getLogger().info("Debugmodus wurde deaktiviert.");
+            PluginLogger.info("Debugmodus wurde deaktiviert.");
             IslandVault.getPlugin().setDebugMode(false);
         }
     }

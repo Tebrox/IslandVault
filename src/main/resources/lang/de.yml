@@ -14,12 +14,14 @@ state:
   disable: "Deaktiviere"
 
 menu:
+  admin:
+    blacklist:
+      title: "Blacklist"
   title: "Dein Insellager"
   titleAdmin: "Insellager von %islandOwner%"
   firstPage: "&aErste Seite"
-  previousPage: "&aVorherige Seite"
-  nextPage: "&aNächste Seite"
-  lastPage: "&aLetzte Seite"
+  previousPage: "&7← &eSeite %previousPage% &7(Aktuell: &b%currentPage%&7/&8%maxPage%&7)"
+  nextPage: "&7→ &eSeite %nextPage% &7(Aktuell: &b%currentPage%&7/&8%maxPage%&7)"
   close: "&4Schließen"
   back: "&aZurück"
   settings: "Einstellungen"
@@ -59,5 +61,21 @@ menu:
         - "&eShiftklick: &bZum Standardeintrag (%ownerlabel%)"
     vaultItemFilter:
       displayName: "Item Filter"
-      showAll: "&eZeige alle Items"
-      availableOnly: "&eZeige nur Items mit vorhandenem Bestand"
+      itemLore:
+        - "Zeige alle Items"
+        - "Zeige nur Items mit vorhandener Menge"
+        - ""
+        - "&eLinksklick: &bAuswahl ändern"
+    enableSound:
+      displayName: "Sound-Einstellungen"
+      itemLore:
+        - "Menüsounds aktiviert"
+        - "Menüsounds deaktiviert"
+        - ""
+        - "&eLinksklick: &bSound-Einstellung umschalten"
+    admin:
+      blacklistItem:
+        itemLore:
+          - "Status: %ruleType%"
+          - ""
+          - "&eLinksklick: &bStatus ändern"

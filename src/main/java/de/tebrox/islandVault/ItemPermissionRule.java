@@ -9,10 +9,12 @@ public class ItemPermissionRule {
         BLACKLIST
     }
 
+    private final String id;
     private final ItemStackKey key;
     private final RuleType type;
 
-    public ItemPermissionRule(ItemStackKey key, RuleType type) {
+    public ItemPermissionRule(String id, ItemStackKey key, RuleType type) {
+        this.id = id;
         this.key = key;
         this.type = type;
     }
@@ -24,4 +26,6 @@ public class ItemPermissionRule {
     public RuleType getType() {
         return type;
     }
+
+    public String getId() { return id; }
 }

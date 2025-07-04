@@ -1,6 +1,6 @@
 package de.tebrox.islandVault.Manager;
 
-import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Utils.PluginLogger;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -64,14 +64,13 @@ public class LanguageManager {
             if (!destFile.exists()) {
                 try (InputStream in = plugin.getResource("lang/" + fileName)) {
                     if (in == null) {
-                        plugin.getLogger().warning("Sprachdatei nicht gefunden in resources: lang/" + fileName);
+                        PluginLogger.warning("Sprachdatei nicht gefunden in resources: lang/" + fileName);
                         continue;
                     }
                     Files.copy(in, destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    plugin.getLogger().info("Kopiere Standard-Sprachdatei: " + fileName);
+                    PluginLogger.info("Kopiere Standard-Sprachdatei: " + fileName);
                 } catch (Exception e) {
-                    plugin.getLogger().severe("Fehler beim Kopieren der Sprachdatei " + fileName);
-                    e.printStackTrace();
+                    PluginLogger.error("Fehler beim Kopieren der Sprachdatei " + fileName);
                 }
             }
         }
@@ -89,7 +88,7 @@ public class LanguageManager {
 
         File[] files = langFolder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml"));
         if (files == null || files.length == 0) {
-            plugin.getLogger().warning("Keine Sprachdateien im lang-Ordner gefunden: " + langFolder.getAbsolutePath());
+            PluginLogger.warning("Keine Sprachdateien im lang-Ordner gefunden: " + langFolder.getAbsolutePath());
             return;
         }
 
@@ -98,10 +97,9 @@ public class LanguageManager {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
                 String langKey = file.getName().replace(".yml", "").toLowerCase(Locale.ROOT);
                 languageCache.put(langKey, config);
-                plugin.getLogger().info("Sprachdatei geladen: " + file.getName());
+                PluginLogger.info("Sprachdatei geladen: " + file.getName());
             } catch (Exception e) {
-                plugin.getLogger().warning("Fehler beim Laden der Sprachdatei: " + file.getName());
-                e.printStackTrace();
+                PluginLogger.warning("Fehler beim Laden der Sprachdatei: " + file.getName());
             }
         }
     }
@@ -127,7 +125,7 @@ public class LanguageManager {
      */
     private String replacePlaceholders(String text, Map<String, String> placeholders) {
         Matcher matcher = PLACEHOLDER_PATTERN.matcher(text);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         while (matcher.find()) {
             String key = matcher.group(1);            // z.B. "amount"
@@ -170,6 +168,8 @@ public class LanguageManager {
         return translate(player, path, Map.of(), true);
     }
 
+    public String translate(Player player, String path, Map<String, String> extraPlaceholders) { return translate(player, path, extraPlaceholders, true); }
+
     /**
      * Translates a message path for the given player, optionally using additional placeholders and global placeholders.
      *
@@ -203,6 +203,10 @@ public class LanguageManager {
      */
     public List<String> translateList(Player player, String path) {
         return translateList(player, path, Map.of(), true);
+    }
+
+    public List<String> translateList(Player player, String path, Map<String, String> extraPlaceholders) {
+        return translateList(player, path, extraPlaceholders, true);
     }
 
     /**
@@ -244,7 +248,7 @@ public class LanguageManager {
      */
     public void reloadLanguages(CommandSender sender) {
         loadLanguages();
-        IslandVault.getPlugin().getLogger().info("Sprachdateien neu geladen.");
+        PluginLogger.info("Sprachdateien neu geladen.");
         if(sender != null) {
             sender.sendMessage("Sprachdateien neu geladen.");
         }

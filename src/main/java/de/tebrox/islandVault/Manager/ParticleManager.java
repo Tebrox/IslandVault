@@ -29,11 +29,11 @@ public class ParticleManager {
         this.plugin = plugin;
     }
 
-    public void showBox(Player player, String id, Location pos1, Location pos2, Particle particle, @Nullable Color colorFrom, @Nullable Color colorTo) {
+    public void showBox(Player player, String id, Location pos1, Location pos2, Particle particle, @Nullable Color colorFrom, @Nullable Color colorTo, boolean show) {
         stop(player, id); // ersetzt bestehende Anzeige
 
-        ParticleTask task = new BoxTask(player, pos1, pos2, particle, colorFrom, colorTo);
-        task.runTaskTimer(plugin, 0L, 10L);
+        ParticleTask task = new BoxTask(player, pos1, pos2, particle, colorFrom, colorTo, show);
+        task.runTaskTimer(plugin, 0L, 4L);
 
         tasks.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>()).put(id, task);
     }

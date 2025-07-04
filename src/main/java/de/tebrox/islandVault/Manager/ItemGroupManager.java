@@ -3,6 +3,7 @@ package de.tebrox.islandVault.Manager;
 import com.google.gson.*;
 import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Utils.PermissionUtils;
+import de.tebrox.islandVault.Utils.PluginLogger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.Plugin;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 /**
  * Manages item permission groups stored in JSON files.
@@ -49,7 +49,7 @@ public final class ItemGroupManager {
     private static void loadGroups() {
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("permission_groups");
         if (section != null && !section.getKeys(false).isEmpty()) {
-            plugin.getLogger().info("Old permission_groups config found, converting...");
+            PluginLogger.info("Old permission_groups config found, converting...");
             convertOldConfig(section);
             plugin.getConfig().set("permission_groups", null);
             plugin.saveConfig();
@@ -82,9 +82,9 @@ public final class ItemGroupManager {
                 json.add("items", itemArray);
                 gson.toJson(json, writer);
 
-                plugin.getLogger().info("Converted group " + groupName + " to JSON file.");
+                PluginLogger.info("Converted group " + groupName + " to JSON file.");
             } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to write group JSON file for " + groupName, e);
+                PluginLogger.error("Failed to write group JSON file for " + groupName);
             }
         }
     }
@@ -114,9 +114,9 @@ public final class ItemGroupManager {
 
                 permissionGroups.put(groupName, items);
                 PermissionUtils.registerPermission(Permissions.GROUPS.getLabel() + groupName, "Group " + groupName, PermissionDefault.FALSE);
-                plugin.getLogger().info("Loaded group " + groupName + " with " + items.size() + " items.");
+                PluginLogger.info("Loaded group " + groupName + " with " + items.size() + " items.");
             } catch (IOException | IllegalStateException e) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to load group JSON file " + file.getName(), e);
+                PluginLogger.error("Failed to load group JSON file " + file.getName());
             }
         }
     }
@@ -152,8 +152,9 @@ public final class ItemGroupManager {
             json.add("items", itemArray);
             gson.toJson(json, writer);
             permissionGroups.put(groupName, items);
+            PluginLogger.info("Saved group: " + groupName);
         } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to save group: " + groupName, e);
+            PluginLogger.error("Failed to save group: " + groupName);
         }
     }
 
@@ -165,9 +166,9 @@ public final class ItemGroupManager {
         File file = new File(itemGroupFolder, groupName.toLowerCase() + ".json");
         if (file.exists()) {
             if (file.delete()) {
-                plugin.getLogger().info("Deleted group file: " + groupName);
+                PluginLogger.info("Deleted group file: " + groupName);
             } else {
-                plugin.getLogger().warning("Failed to delete group file: " + groupName);
+                PluginLogger.error("Failed to delete group file: " + groupName);
             }
         }
     }
@@ -192,6 +193,19 @@ public final class ItemGroupManager {
         for (Map.Entry<String, List<String>> entry : permissionGroups.entrySet()) {
             List<String> values = entry.getValue();
             if (values.stream().anyMatch(m -> m.equalsIgnoreCase(materialToFind))) {
+                result.add(entry.getKey());
+            }
+        }
+
+        return result;
+    }
+
+    public static List<String> findGroupsWithItemID(String itemID) {
+        List<String> result = new ArrayList<>();
+
+        for (Map.Entry<String, List<String>> entry : permissionGroups.entrySet()) {
+            List<String> values = entry.getValue();
+            if (values.stream().anyMatch(id -> id.equalsIgnoreCase(itemID))) {
                 result.add(entry.getKey());
             }
         }

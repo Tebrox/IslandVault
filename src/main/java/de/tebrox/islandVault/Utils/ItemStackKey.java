@@ -1,6 +1,7 @@
 package de.tebrox.islandVault.Utils;
 
 import de.tebrox.islandVault.Base64ItemSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -19,8 +20,16 @@ public class ItemStackKey {
 
     public static ItemStackKey of(ItemStack stack) {
         if (stack == null || stack.getType().isAir()) return new ItemStackKey("AIR");
-        stack.setAmount(1);
-        return new ItemStackKey(Base64ItemSerializer.serialize(stack));
+        ItemStack copy = stack.clone();
+        copy.setAmount(1);
+
+        ItemMeta meta = copy.getItemMeta();
+        if (meta != null) {
+            meta.setLore(null);  // Lore entfernen
+            copy.setItemMeta(meta);
+        }
+
+        return new ItemStackKey(Base64ItemSerializer.serialize(copy));
     }
 
     @Override
@@ -43,7 +52,12 @@ public class ItemStackKey {
 
     public ItemStack toItemStack() {
         if ("AIR".equals(key)) return new ItemStack(Material.AIR);
-        return Base64ItemSerializer.deserialize(key);
+        try {
+            return Base64ItemSerializer.deserialize(key);
+        } catch (Exception e) {
+            PluginLogger.warning("[ItemStackKey] Fehler beim Deserialisieren: " + e.getMessage());
+            return null; // oder: new ItemStack(Material.BARRIER)
+        }
     }
 
     public static ItemStackKey fromString(String key) {

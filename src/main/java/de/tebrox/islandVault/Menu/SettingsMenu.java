@@ -2,24 +2,28 @@ package de.tebrox.islandVault.Menu;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Utils.BentoBoxRanks;
-import de.tebrox.islandVault.Utils.IslandUtils;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import de.tebrox.islandVault.Utils.PlayerDataUtils;
+import de.tebrox.islandVault.Utils.SoundUtils;
 import de.tebrox.islandVault.VaultData;
+import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.menu.Menu;
 import me.kodysimpson.simpapi.menu.MenuManager;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
-import org.bukkit.Color;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import world.bentobox.bentobox.BentoBox;
+import world.bentobox.bentobox.database.objects.Island;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A settings menu for managing island vault preferences.
@@ -34,7 +38,7 @@ import java.util.*;
  */
 public class SettingsMenu extends Menu {
 
-    private VaultData vaultData;
+    private VaultData vaultData = null;
     private Class<?> previousMenu = null;
 
     private File bentoBoxfile;
@@ -56,6 +60,10 @@ public class SettingsMenu extends Menu {
 
         if(playerMenuUtility.getData("vaultData") != null) {
             vaultData = (VaultData) playerMenuUtility.getData("vaultData");
+        }else{
+            Island island = BentoBox.getInstance().getIslands().getIslandAt(player.getLocation()).orElse(null);
+
+            vaultData = IslandVault.getVaultManager().getCachedVault(island.getUniqueId());
         }
 
         if(playerMenuUtility.getData("previousMenu") != null) {
@@ -121,6 +129,7 @@ public class SettingsMenu extends Menu {
 
                     try {
                         MenuManager.openMenu(menuClass, playerMenuUtility.getOwner());
+                        SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
                     } catch (Exception e) {
                         playerMenuUtility.getOwner().sendMessage("§cFehler beim Öffnen des Menüs.");
                     }
@@ -136,23 +145,29 @@ public class SettingsMenu extends Menu {
                         }
                     }
                     IslandVault.getVaultManager().saveVaultAsync(vaultData);
+                    SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
 
                     break;
                 case Material.HOPPER:
                     if(inventoryClickEvent.isLeftClick()) {
                         vaultData.setAutoCollect(!vaultData.getAutoCollect());
-                        player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+                        SoundUtils.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                     }
                     else if(inventoryClickEvent.isRightClick()) {
                         player.closeInventory();
-                        player.playSound(player, Sound.ENTITY_EXPERIENCE_BOTTLE_THROW, 1, 1);
-                        IslandVault.getParticleManager().showRadiusBorder(player, "radius", player.getLocation(), 10, Particle.DUST, Color.BLUE, null);
+                        SoundUtils.playSound(player, Sound.ENTITY_EXPERIENCE_BOTTLE_THROW, 1, 1);
+                        IslandVault.getParticleManager().showRadiusBorder(player, "radius", player.getLocation(), 5, Particle.DUST, Color.BLUE, null);
                         //IslandUtils.showRadiusParticles(player, player.getLocation(), 5);
+
                     }
                     break;
                 case Material.COMPASS:
                     PlayerDataUtils.saveShowOnlyItemsWithAmount(player, !PlayerDataUtils.loadShowOnlyItemsWithAmount(player));
-
+                    SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
+                    break;
+                case Material.NOTE_BLOCK:
+                    PlayerDataUtils.saveSoundEnabled(player, !PlayerDataUtils.loadSoundEnabled(player));
+                    SoundUtils.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
                     break;
                 default:
                     break;
@@ -183,7 +198,7 @@ public class SettingsMenu extends Menu {
         }
 
         if(vaultData.getOwnerUUID().equals(playerMenuUtility.getOwner().getUniqueId())) {
-            list.add(makeItem(Material.HOPPER, IslandVault.getLanguageManager().translate(player, "menu.item.radius.displayName"), createAutocollectLore().toArray(new String[0])));
+            list.add(makeItem(Material.HOPPER, IslandVault.getLanguageManager().translate(player, "menu.item.radius.displayName"), false, vaultData.getAutoCollect(), createAutocollectLore().toArray(new String[0])));
         }
 
         if(vaultData.getOwnerUUID().equals(playerMenuUtility.getOwner().getUniqueId())) {
@@ -191,6 +206,7 @@ public class SettingsMenu extends Menu {
         }
 
         list.add(makeItem(Material.COMPASS, IslandVault.getLanguageManager().translate(player, "menu.item.vaultItemFilter.displayName"), createFilterLore().toArray(new String[0])));
+        list.add(makeItem(Material.NOTE_BLOCK, IslandVault.getLanguageManager().translate(player, "menu.item.enableSound.displayName"), false, PlayerDataUtils.loadSoundEnabled(player), createEnableSoundLore().toArray(new String[0])));
 
         return list;
     }
@@ -201,9 +217,35 @@ public class SettingsMenu extends Menu {
      * @return a list of lore lines
      */
     private List<String> createFilterLore() {
-        String stateParam = "menu.item.vaultItemFilter." + (PlayerDataUtils.loadShowOnlyItemsWithAmount(player) ? "availableOnly" : "showAll");
-        return IslandVault.getLanguageManager().translateList(player, stateParam);
+        List<String> itemLore = IslandVault.getLanguageManager().translateList(player, "menu.item.vaultItemFilter.itemLore");
+
+        boolean showOnlyAvailable = PlayerDataUtils.loadShowOnlyItemsWithAmount(player);
+        String[] prefixes = {
+                showOnlyAvailable ? "§c✘" : "§a✔",
+                showOnlyAvailable ? "§a✔" : "§c✘"
+        };
+
+        itemLore.set(0, prefixes[0] + itemLore.get(0));
+        itemLore.set(1, prefixes[1] + itemLore.get(1));
+
+        return itemLore;
     }
+
+    private List<String> createEnableSoundLore() {
+        List<String> itemLore = IslandVault.getLanguageManager().translateList(player, "menu.item.enableSound.itemLore");
+
+        boolean showOnlyAvailable = PlayerDataUtils.loadSoundEnabled(player);
+        String[] prefixes = {
+                showOnlyAvailable ? "§a✔" : "§c✘",
+                showOnlyAvailable ? "§c✘" : "§a✔"
+        };
+
+        itemLore.set(0, prefixes[0] + itemLore.get(0));
+        itemLore.set(1, prefixes[1] + itemLore.get(1));
+
+        return itemLore;
+    }
+
 
     /**
      * Creates lore for the auto-collect toggle item.
@@ -278,5 +320,25 @@ public class SettingsMenu extends Menu {
         }
 
         return reversed.get(nextIndex);
+    }
+
+    public ItemStack makeItem(Material material, String displayName, boolean hideTooltip, boolean isEnchanted, String... lore) {
+
+        ItemStack item = new ItemStack(material);
+        ItemMeta itemMeta = item.getItemMeta();
+        assert itemMeta != null;
+        itemMeta.setDisplayName(displayName);
+        itemMeta.setHideTooltip(hideTooltip);
+
+        if(isEnchanted) {
+            itemMeta.addEnchant(Enchantment.UNBREAKING, 1, true);
+            itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
+
+        //Automatically translate color codes provided
+        itemMeta.setLore(Arrays.stream(lore).map(ColorTranslator::translateColorCodes).collect(Collectors.toList()));
+        item.setItemMeta(itemMeta);
+
+        return item;
     }
 }

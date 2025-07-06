@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Commands;
 
 import de.tebrox.islandVault.Enums.Commands;
 import de.tebrox.islandVault.Enums.Permissions;
+import de.tebrox.islandVault.IslandItemList;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
 import de.tebrox.islandVault.Menu.VaultMenu;
@@ -9,6 +10,7 @@ import de.tebrox.islandVault.Utils.IslandUtils;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.MenuManager;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
@@ -16,6 +18,7 @@ import world.bentobox.bentobox.database.objects.Island;
 import world.bentobox.bentobox.managers.IslandsManager;
 
 import java.util.List;
+import java.util.Objects;
 
 public class OpenCommand implements SubCommand {
 
@@ -73,10 +76,29 @@ public class OpenCommand implements SubCommand {
                 return;
             }
             if(IslandUtils.hasAccessToCurrentIsland(player)) {
-                try {
-                    MenuManager.openMenu(VaultMenu.class, player);
-                } catch (MenuManagerException | MenuManagerNotSetupException e) {
-                    throw new RuntimeException(e);
+                IslandItemList itemList = Objects.requireNonNull(IslandVault.getSessionManager().getSession(island.getUniqueId()).orElse(null)).getItemList();
+                if (itemList.arePermissionsLoaded()) {
+                    try {
+                        MenuManager.openMenu(VaultMenu.class, player);
+                    } catch (MenuManagerException e) {
+                        throw new RuntimeException(e);
+                    } catch (MenuManagerNotSetupException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    itemList.updatePermissionsAsync(island.getOwner()).thenRun(() ->
+                            Bukkit.getScheduler().runTask(IslandVault.getPlugin(), () ->
+                                    {
+                                        try {
+                                            MenuManager.openMenu(VaultMenu.class, player);
+                                        } catch (MenuManagerException e) {
+                                            throw new RuntimeException(e);
+                                        } catch (MenuManagerNotSetupException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                            )
+                    );
                 }
             }else{
                 player.sendMessage(IslandVault.getLanguageManager().translate(player, "notTeamMember"));

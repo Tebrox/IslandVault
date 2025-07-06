@@ -11,6 +11,11 @@ import java.util.concurrent.CompletableFuture;
 public class IslandItemList {
 
     private final List<ItemPermissionRule> allowedRules = new ArrayList<>();
+    private volatile boolean permissionsLoaded = false;
+
+    public boolean arePermissionsLoaded() {
+        return permissionsLoaded;
+    }
 
     /**
      * Lädt die Permissions asynchron und füllt allowedRules mit erlaubten Items.
@@ -58,15 +63,17 @@ public class IslandItemList {
             futures.add(future);
         }
 
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenRun(() -> permissionsLoaded = true);
     }
 
     public List<ItemPermissionRule> getAllowedRules() {
+        System.out.println("Size: " + allowedRules.size());
         return allowedRules;
     }
 
     public List<ItemStack> getAllowedItemStacks() {
-        return allowedRules.stream()
+        return getAllowedRules().stream()
                 .map(rule -> rule.getKey().toItemStack())
                 .toList();
     }

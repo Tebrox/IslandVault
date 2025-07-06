@@ -6,7 +6,9 @@ import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import org.bukkit.Material;
 
+import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class LuckPermsUtils {
     public static boolean hasPermissionForItem(UUID uuid, String itemID) {
@@ -48,5 +50,29 @@ public class LuckPermsUtils {
         if(user == null) return false;
 
         return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+    }
+
+    /**
+     * Prüft asynchron, ob der User die Item-Permission besitzt.
+     * Lädt ggf. den LuckPerms-User.
+     */
+    public static CompletableFuture<Boolean> hasPermissionForItemAsync(UUID uuid, String item) {
+        String perm = "islandvault.vault." + item.toLowerCase(Locale.ROOT);
+        return checkPermissionAsync(uuid, perm);
+    }
+
+    /**
+     * Prüft asynchron, ob der User die Gruppen-Permission besitzt.
+     */
+    public static CompletableFuture<Boolean> hasPermissionForGroupAsync(UUID uuid, String group) {
+        String perm = "islandvault.groups." + group;
+        return checkPermissionAsync(uuid, perm);
+    }
+
+    private static CompletableFuture<Boolean> checkPermissionAsync(UUID uuid, String permission) {
+        LuckPerms lp = LuckPermsProvider.get();
+        return lp.getUserManager().loadUser(uuid).thenApplyAsync(user -> {
+            return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+        });
     }
 }

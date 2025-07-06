@@ -2,7 +2,6 @@ package de.tebrox.islandVault.Commands;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.CommandManager.SubCommand;
-import de.tebrox.islandVault.Manager.IslandTracker;
 import de.tebrox.islandVault.Region.Region;
 import de.tebrox.islandVault.Region.RegionSession;
 import net.kyori.adventure.text.Component;
@@ -17,9 +16,7 @@ import org.bukkit.Particle;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
-import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,7 +54,7 @@ public class RegionCommand implements SubCommand {
             if (args.length > 0 && sender instanceof Player player) {
                 String firstArg = args[1].toLowerCase();
                 if (firstArg.equals("delete") || firstArg.equals("edit")) {
-                    return IslandVault.getRegionManager().getRegionNames(IslandTracker.getPlayerIsland(player.getUniqueId()).getUniqueId());
+                    return IslandVault.getRegionManager().getRegionNames(IslandVault.getSessionManager().getIslandIdByPlayer(player.getUniqueId()).orElse(null));
                 }
             }
         }

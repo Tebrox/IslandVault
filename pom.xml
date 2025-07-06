@@ -97,6 +97,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.4.8-jre</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.Tebrox</groupId>
             <artifactId>SimpAPI</artifactId>
             <version>6b2fbcdb02</version>

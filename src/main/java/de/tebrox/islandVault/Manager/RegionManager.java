@@ -170,8 +170,7 @@ public class RegionManager {
      * @return the island UUID as a String
      */
     public String getIslandUUID(Player player) {
-
-        return IslandTracker.getPlayerIsland(player.getUniqueId()).getUniqueId();
+        return IslandVault.getSessionManager().getIslandIdByPlayer(player.getUniqueId()).orElse(null);
     }
 
     /**

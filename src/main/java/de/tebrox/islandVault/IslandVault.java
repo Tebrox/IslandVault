@@ -31,6 +31,7 @@ public final class IslandVault extends JavaPlugin {
     private static VaultManager vaultManager;
     private static VaultSyncManager vaultSyncManager;
     private static LanguageManager languageManager;
+    private static IslandSessionManager sessionManager;
 
     //Permission
     private static PermissionItemRegistry permissionItemRegistry;
@@ -96,6 +97,7 @@ public final class IslandVault extends JavaPlugin {
         particleManager = new ParticleManager(this);
 
         vaultManager = new VaultManager(this);
+        sessionManager = new IslandSessionManager(this, vaultManager);
         vaultSyncManager = new VaultSyncManager(this);
         permissionItemRegistry = new PermissionItemRegistry(this);
         regionManager = new RegionManager(this);
@@ -117,10 +119,10 @@ public final class IslandVault extends JavaPlugin {
 
                     Island island = islandsManager.getIsland(player.getWorld(), player.getUniqueId());
                     if (island != null) {
-                        IslandTracker.setPlayerIsland(player.getUniqueId(), island);
+                        sessionManager.playerEnteredIsland(player.getUniqueId(), island);
                         IslandVault.getVaultManager().loadOrCreateVault(island.getUniqueId(), island.getOwner());
                     } else {
-                        IslandTracker.removePlayerIsland(player.getUniqueId());
+                        sessionManager.playerLeftIsland(player.getUniqueId());
                     }
                 }
             }
@@ -141,6 +143,7 @@ public final class IslandVault extends JavaPlugin {
     public static RegionManager getRegionManager() { return  regionManager; }
     public static ParticleManager getParticleManager() { return particleManager; }
     public static VaultSyncManager getVaultSyncManager() { return vaultSyncManager; }
+    public static IslandSessionManager getSessionManager() { return sessionManager; }
 
     public static PermissionItemRegistry getPermissionItemRegistry() { return permissionItemRegistry; }
     public static HashMap<String, List<String>> getPermissionGroups() { return permissionGroups; }
@@ -173,8 +176,9 @@ public final class IslandVault extends JavaPlugin {
         //getServer().getPluginManager().registerEvents(new OPJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new InventoryListener(), this);
         getServer().getPluginManager().registerEvents(new ItemAutoCollectListener(this), this);
-        getServer().getPluginManager().registerEvents(new IslandListener(), this);
+        getServer().getPluginManager().registerEvents(new IslandListener(getSessionManager()), this);
         getServer().getPluginManager().registerEvents(new VaultEventListener(adminVaultLogger), this);
+        getServer().getPluginManager().registerEvents(new IslandPermissionsListener(), this);
     }
 
     public void loadAutoCollectPermissions() {

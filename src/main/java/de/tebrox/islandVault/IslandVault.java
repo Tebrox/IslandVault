@@ -179,6 +179,8 @@ public final class IslandVault extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new IslandListener(getSessionManager()), this);
         getServer().getPluginManager().registerEvents(new VaultEventListener(adminVaultLogger), this);
         getServer().getPluginManager().registerEvents(new IslandPermissionsListener(), this);
+
+        new LuckPermsPermissionListener(this);
     }
 
     public void loadAutoCollectPermissions() {

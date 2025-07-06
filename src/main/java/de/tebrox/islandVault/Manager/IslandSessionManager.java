@@ -118,6 +118,10 @@ public class IslandSessionManager {
         return Optional.ofNullable(playerToIsland.get(playerUUID));
     }
 
+    public Optional<IslandSession> getSessionByPlayer(UUID playerUUID) {
+        return getIslandIdByPlayer(playerUUID).flatMap(this::getSession);
+    }
+
     public Collection<IslandSession> getAllSessions() {
         return sessionCache.asMap().values();
     }

@@ -1,8 +1,5 @@
 package de.tebrox.islandVault;// IslandItemList.java
-import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.ItemPermissionRule;
 import de.tebrox.islandVault.Manager.ItemGroupManager;
-import de.tebrox.islandVault.PermissionItemRegistry;
 import de.tebrox.islandVault.Utils.ItemStackKey;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import org.bukkit.Material;
@@ -10,7 +7,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 public class IslandItemList {
 
@@ -63,6 +59,10 @@ public class IslandItemList {
         }
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    }
+
+    public List<ItemPermissionRule> getAllowedRules() {
+        return allowedRules;
     }
 
     public List<ItemStack> getAllowedItemStacks() {

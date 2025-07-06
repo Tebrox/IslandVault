@@ -1,5 +1,7 @@
 package de.tebrox.islandVault.Menu;
 
+import de.tebrox.islandVault.IslandItemList;
+import de.tebrox.islandVault.IslandSession;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Utils.*;
 import de.tebrox.islandVault.VaultData;
@@ -39,88 +41,119 @@ public class VaultMenu extends PaginatedMenu {
     private ItemSortUtil.SortOption currentOption;
     private ItemSortUtil.SortDirection currentDirection;
     private final List<ItemSortUtil.SortOption> options = Arrays.asList(ItemSortUtil.SortOption.values());
-    private final Island island;
-    private final VaultData vaultData;
+
+    private IslandSession islandSession;
+    private IslandItemList islandItemList;
+    private Island island;
+    private VaultData vaultData;
+
+    private String searchQuery = "";
+    private List<ItemStack> currentPageItems;
+    private int currentPageItemCount;
 
     private final Player viewer;
 
 
     public VaultMenu(PlayerMenuUtility playerMenuUtility) {
         super(playerMenuUtility);
-        maxItemsPerPage = 45;
         this.viewer = playerMenuUtility.getOwner();
+        this.maxItemsPerPage = 45;
+        this.islandSession = IslandVault.getSessionManager().getSessionByPlayer(viewer.getUniqueId()).orElse(null);
 
-        island = BentoBox.getInstance().getIslands().getIslandAt(viewer.getLocation()).orElse(null);
+        this.island = islandSession.getIsland();
+
         IslandVault.getVaultSyncManager().registerViewer(island.getUniqueId(), viewer, this);
 
-        this.vaultData = IslandVault.getVaultManager().getCachedVault(island.getUniqueId());
+        this.vaultData = islandSession.getVaultData();
         this.ownerUUID = vaultData.getOwnerUUID();
 
+        this.islandItemList = islandSession.getItemList();
+
+        Object queryObj = playerMenuUtility.getData("searchQuery");
+        if (queryObj != null) {
+            this.searchQuery = String.valueOf(queryObj);
+        }
+
     }
+
+//    @Override
+//    public List<ItemStack> dataToItems() {
+//        String searchQuery = "";
+//
+//        if(playerMenuUtility.getData("searchQuery") != null) {
+//            searchQuery = String.valueOf(playerMenuUtility.getData("searchQuery"));
+//        }
+//
+//
+//        if(ownerUUID == null) {
+//            List<ItemStack> temp = new ArrayList<>();
+//            temp.add(NO_ITEMS);
+//            for(int i = 1; i < maxItemsPerPage; i++) {
+//                temp.add(FILLER_GLASS);
+//            }
+//            return temp;
+//        }
+//
+//        currentOption = PlayerDataUtils.loadSortOption(playerMenuUtility.getOwner());
+//        currentDirection = PlayerDataUtils.loadSortDirection(playerMenuUtility.getOwner());
+//        List<ItemStack> filteredItems = vaultData.filterItems(playerMenuUtility.getOwner(), searchQuery);
+//
+//        ItemSortUtil.sortItems(filteredItems, vaultData, player, currentOption, currentDirection);
+//
+//        Player player = playerMenuUtility.getOwner();
+//        boolean isOp = player.isOp();
+//
+//        for (int i = 0; i < filteredItems.size(); i++) {
+//            ItemStack item = filteredItems.get(i);
+//            if (item == null || item.getType().isAir()) continue;
+//
+//            ItemMeta meta = item.getItemMeta();
+//            if (meta == null) continue;
+//
+//            List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+//
+//            lore = IslandVault.getLanguageManager().translateList(player, "menu.item.vaultItem.itemLore", Map.of("amount", String.valueOf(vaultData.getAmount(item)), "maxStackSize", String.valueOf(item.getMaxStackSize())), true);
+//
+//            // Zusätzliche OP-Lore, falls OP
+//            if (isOp && IslandVault.getPlugin().isDebug()) {
+//                lore.add("§8§m------------------------");
+//                lore.add("§6§lDEBUG-INFO");
+//                lore.add("§7Material: §f" + item.getType());
+//                // weitere Debug-Infos ...
+//                lore.add("§8§m------------------------");
+//            }
+//
+//            meta.setLore(lore);
+//            item.setItemMeta(meta);
+//
+//            filteredItems.set(i, item);
+//        }
+//
+//        int size = filteredItems.size();
+//        int rest = size % maxItemsPerPage;
+//        if(rest > 0) {
+//            int z = maxItemsPerPage - rest;
+//            for(int i = 0; i < z; i++) {
+//                filteredItems.add(FILLER_GLASS);
+//            }
+//        }
+//        return filteredItems;
+//    }
 
     @Override
     public List<ItemStack> dataToItems() {
-        String searchQuery = "";
+        List<ItemStack> allItems = dataToItemsFullList();
 
-        if(playerMenuUtility.getData("searchQuery") != null) {
-            searchQuery = String.valueOf(playerMenuUtility.getData("searchQuery"));
+        int startIndex = page * maxItemsPerPage;
+        int endIndex = Math.min(startIndex + maxItemsPerPage, allItems.size());
+
+        if (startIndex >= allItems.size()) {
+            return Collections.emptyList();
         }
 
-
-        if(ownerUUID == null) {
-            List<ItemStack> temp = new ArrayList<>();
-            temp.add(NO_ITEMS);
-            for(int i = 1; i < maxItemsPerPage; i++) {
-                temp.add(FILLER_GLASS);
-            }
-            return temp;
-        }
-
-        currentOption = PlayerDataUtils.loadSortOption(playerMenuUtility.getOwner());
-        currentDirection = PlayerDataUtils.loadSortDirection(playerMenuUtility.getOwner());
-        List<ItemStack> filteredItems = vaultData.filterItems(playerMenuUtility.getOwner(), searchQuery);
-
-        ItemSortUtil.sortItems(filteredItems, vaultData, player, currentOption, currentDirection);
-
-        Player player = playerMenuUtility.getOwner();
-        boolean isOp = player.isOp();
-
-        for (int i = 0; i < filteredItems.size(); i++) {
-            ItemStack item = filteredItems.get(i);
-            if (item == null || item.getType().isAir()) continue;
-
-            ItemMeta meta = item.getItemMeta();
-            if (meta == null) continue;
-
-            List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
-
-            lore = IslandVault.getLanguageManager().translateList(player, "menu.item.vaultItem.itemLore", Map.of("amount", String.valueOf(vaultData.getAmount(item)), "maxStackSize", String.valueOf(item.getMaxStackSize())), true);
-
-            // Zusätzliche OP-Lore, falls OP
-            if (isOp && IslandVault.getPlugin().isDebug()) {
-                lore.add("§8§m------------------------");
-                lore.add("§6§lDEBUG-INFO");
-                lore.add("§7Material: §f" + item.getType());
-                // weitere Debug-Infos ...
-                lore.add("§8§m------------------------");
-            }
-
-            meta.setLore(lore);
-            item.setItemMeta(meta);
-
-            filteredItems.set(i, item);
-        }
-
-        int size = filteredItems.size();
-        int rest = size % maxItemsPerPage;
-        if(rest > 0) {
-            int z = maxItemsPerPage - rest;
-            for(int i = 0; i < z; i++) {
-                filteredItems.add(FILLER_GLASS);
-            }
-        }
-        return filteredItems;
+        return allItems.subList(startIndex, endIndex);
     }
+
     @Override
     public @Nullable HashMap<Integer, ItemStack> getCustomMenuBorderItems() {
         return null;
@@ -145,7 +178,7 @@ public class VaultMenu extends PaginatedMenu {
     public void handleMenu(InventoryClickEvent event) throws MenuManagerNotSetupException, MenuManagerException {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
-        Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
+        //Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island == null) return;
 
         // Klick im Spieler-Inventar (zum Einlagern mit Shift-Klick)
@@ -464,5 +497,113 @@ public class VaultMenu extends PaginatedMenu {
     @Override
     public void handleMenuClose() {
         onClose(player);
+    }
+
+    @Override
+    public int getTotalPages() {
+        int totalItems = getTotalItemsCount();
+        if (totalItems == 0) return 1; // Mindestens 1 Seite anzeigen
+
+        return ((totalItems - 1) / maxItemsPerPage) + 1;
+    }
+
+    @Override
+    public void refreshData() {
+        invalidateCache();
+        reloadItems();
+    }
+
+    @Override
+    public boolean nextPage() {
+        int totalPages = getTotalPages();
+        if (page < totalPages - 1) {
+            page++;
+            refreshData();  // Cache invalidieren & Items neu laden
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean prevPage() {
+        if (page == 0) {
+            return false;  // Bereits auf der ersten Seite
+        }
+        page--;
+        refreshData();  // Cache leeren und Items neu laden
+        return true;
+    }
+
+    public int getTotalItemsCount() {
+        // Beispiel: Alle gefilterten Items holen (ohne Paging), nur die Anzahl zurückgeben
+        return  islandItemList.getAllowedItemStacks().size();
+    }
+
+    public List<ItemStack> dataToItemsFullList() {
+        Player player = playerMenuUtility.getOwner();
+        UUID ownerUUID = vaultData.getOwnerUUID();
+
+        // 1. Hole alle erlaubten Items der Insel (IslandItemList)
+        IslandItemList islandItemList = IslandVault.getSessionManager().getSessionByPlayer(ownerUUID).orElse(null).getItemList();
+        if (islandItemList == null) {
+            return Collections.emptyList();
+        }
+
+        // 2. Hole alle Items aus dem Vault mit Mengenangaben
+        Map<ItemStackKey, Integer> vaultItems = vaultData.getItems();
+
+        // 3. Entscheide, ob nur Items mit Menge angezeigt werden sollen
+        boolean showOnlyWithAmount = PlayerDataUtils.loadShowOnlyItemsWithAmount(player);
+
+        Map<ItemStackKey, Integer> combinedItems;
+
+        if (showOnlyWithAmount) {
+            // Nur Items, die im Vault vorhanden sind UND auf der IslandItemList erlaubt sind
+            combinedItems = vaultItems.entrySet().stream()
+                    .filter(e -> islandItemList.isItemAllowed(e.getKey()) && e.getValue() > 0)
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        } else {
+            // Alle erlaubten Items aus IslandItemList, Menge aus Vault (0 falls nicht vorhanden)
+            combinedItems = new HashMap<>();
+
+            for (ItemStack allowedItem : islandItemList.getAllowedItemStacks()) {
+                ItemStackKey key = ItemStackKey.of(allowedItem);
+                int amount = vaultItems.getOrDefault(key, 0);
+                combinedItems.put(key, amount);
+            }
+        }
+
+        // 4. Filter nach Suchbegriff (falls vorhanden)
+        String searchQuery;
+        if (playerMenuUtility.getData("searchQuery") != null) {
+            searchQuery = String.valueOf(playerMenuUtility.getData("searchQuery")).toLowerCase(Locale.ROOT);
+        } else {
+            searchQuery = "";
+        }
+
+        // 5. Map zu ItemStack + Filter auf Name/Lore mit Suchbegriff
+        return combinedItems.keySet().stream()
+                .map(ItemStackKey::toItemStack)
+                .filter(item -> {
+                    if (item == null || item.getType().isAir()) return false;
+
+                    if (searchQuery.isEmpty()) return true;
+
+                    String name = ItemNameTranslator.getLocalizedName(item, player).toLowerCase(Locale.ROOT);
+
+                    if (name.contains(searchQuery)) return true;
+
+                    ItemMeta meta = item.getItemMeta();
+                    if (meta != null && meta.hasLore()) {
+                        for (String line : meta.getLore()) {
+                            if (line != null && line.toLowerCase(Locale.ROOT).contains(searchQuery)) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    return false;
+                })
+                .collect(Collectors.toList());
     }
 }

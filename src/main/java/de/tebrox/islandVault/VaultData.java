@@ -51,6 +51,9 @@ public class VaultData {
         return items.getOrDefault(ItemStackKey.of(stack), 0);
     }
 
+    public int getAmount(ItemStackKey key) {
+        return items.getOrDefault(key, 0);
+    }
 
     public boolean getAutoCollect() {
         return autoCollect;
@@ -109,93 +112,93 @@ public class VaultData {
         return items.isEmpty();
     }
 
-//    public List<ItemStack> filterItems(Player player, @Nullable String searchQuery) {
-//        if (searchQuery == null || searchQuery.trim().isEmpty()) {
-//            Map<ItemStackKey, Integer> combined = items;
-//
-//            if(!PlayerDataUtils.loadShowOnlyItemsWithAmount(player)) {
-//                combined = getCombinedItemMap(items, IslandVault.getPermissionItemRegistry().getWhitelistedItems());
-//            }
-//
-//            return combined.keySet().stream()
-//                    .map(ItemStackKey::toItemStack)
-//                    .collect(Collectors.toList());
-//        }
-//
-//        String lower = searchQuery.toLowerCase(Locale.ROOT);
-//
-//        Map<ItemStackKey, Integer> combined = items;
-//
-//        if(!PlayerDataUtils.loadShowOnlyItemsWithAmount(player)) {
-//            combined = getCombinedItemMap(items, IslandVault.getPermissionItemRegistry().getWhitelistedItems());
-//        }
-//
-//        return combined.keySet().stream()
-//                .map(ItemStackKey::toItemStack)
-//                .filter(item -> {
-//                    if (item == null || item.getType().isAir()) return false;
-//
-//                    // Name prüfen
-//                    String name = ItemNameTranslator.getLocalizedName(item, player).toLowerCase(Locale.ROOT);
-//                    if (name.contains(lower)) return true;
-//
-//                    // Lore prüfen
-//                    ItemMeta meta = item.getItemMeta();
-//                    if (meta != null && meta.hasLore()) {
-//                        for (String line : meta.getLore()) {
-//                            if (line != null && line.toLowerCase(Locale.ROOT).contains(lower)) {
-//                                return true;
-//                            }
-//                        }
-//                    }
-//
-//                    return false;
-//                })
-//                .collect(Collectors.toList());
-//    }
-
     public List<ItemStack> filterItems(Player player, @Nullable String searchQuery) {
-        UUID uuid = player.getUniqueId();
-        PermissionItemRegistry registry = IslandVault.getPermissionItemRegistry();
+        if (searchQuery == null || searchQuery.trim().isEmpty()) {
+            Map<ItemStackKey, Integer> combined = items;
 
-        // Entscheide, ob Whitelist-Filterung aktiviert ist
-        Map<ItemStackKey, Integer> combined = PlayerDataUtils.loadShowOnlyItemsWithAmount(player)
-                ? items
-                : getCombinedItemMap(items, registry.getWhitelistedItems());
+            if(!PlayerDataUtils.loadShowOnlyItemsWithAmount(player)) {
+                combined = getCombinedItemMap(items, IslandVault.getPermissionItemRegistry().getWhitelistedItems());
+            }
 
-        boolean hasSearch = searchQuery != null && !searchQuery.trim().isEmpty();
-        String lower = hasSearch ? searchQuery.toLowerCase(Locale.ROOT) : null;
+            return combined.keySet().stream()
+                    .map(ItemStackKey::toItemStack)
+                    .collect(Collectors.toList());
+        }
+
+        String lower = searchQuery.toLowerCase(Locale.ROOT);
+
+        Map<ItemStackKey, Integer> combined = items;
+
+        if(!PlayerDataUtils.loadShowOnlyItemsWithAmount(player)) {
+            combined = getCombinedItemMap(items, IslandVault.getPermissionItemRegistry().getWhitelistedItems());
+        }
 
         return combined.keySet().stream()
                 .map(ItemStackKey::toItemStack)
                 .filter(item -> {
                     if (item == null || item.getType().isAir()) return false;
 
-                    // Blacklist-Check
-                    if (registry.isBlacklisted(ItemStackKey.of(item))) return false;
-
-                    // Berechtigungs-Check
-                    if (!hasPermissionForItemOrGroup(uuid, registry.getId(ItemStackKey.of(item)).orElse(""))) return false;
-
-                    // Ohne Suchbegriff: alle zugelassenen Items
-                    if (!hasSearch) return true;
-
-                    // Mit Suchbegriff: prüfe Name und Lore
+                    // Name prüfen
                     String name = ItemNameTranslator.getLocalizedName(item, player).toLowerCase(Locale.ROOT);
                     if (name.contains(lower)) return true;
 
+                    // Lore prüfen
                     ItemMeta meta = item.getItemMeta();
                     if (meta != null && meta.hasLore()) {
-                        return meta.getLore().stream()
-                                .filter(Objects::nonNull)
-                                .map(line -> line.toLowerCase(Locale.ROOT))
-                                .anyMatch(line -> line.contains(lower));
+                        for (String line : meta.getLore()) {
+                            if (line != null && line.toLowerCase(Locale.ROOT).contains(lower)) {
+                                return true;
+                            }
+                        }
                     }
 
                     return false;
                 })
                 .collect(Collectors.toList());
     }
+
+//    public List<ItemStack> filterItems(Player player, @Nullable String searchQuery) {
+//        UUID uuid = player.getUniqueId();
+//        PermissionItemRegistry registry = IslandVault.getPermissionItemRegistry();
+//
+//        // Entscheide, ob Whitelist-Filterung aktiviert ist
+//        Map<ItemStackKey, Integer> combined = PlayerDataUtils.loadShowOnlyItemsWithAmount(player)
+//                ? items
+//                : getCombinedItemMap(items, registry.getWhitelistedItems());
+//
+//        boolean hasSearch = searchQuery != null && !searchQuery.trim().isEmpty();
+//        String lower = hasSearch ? searchQuery.toLowerCase(Locale.ROOT) : null;
+//
+//        return combined.keySet().stream()
+//                .map(ItemStackKey::toItemStack)
+//                .filter(item -> {
+//                    if (item == null || item.getType().isAir()) return false;
+//
+//                    // Blacklist-Check
+//                    if (registry.isBlacklisted(ItemStackKey.of(item))) return false;
+//
+//                    // Berechtigungs-Check
+//                    if (!hasPermissionForItemOrGroup(uuid, registry.getId(ItemStackKey.of(item)).orElse(""))) return false;
+//
+//                    // Ohne Suchbegriff: alle zugelassenen Items
+//                    if (!hasSearch) return true;
+//
+//                    // Mit Suchbegriff: prüfe Name und Lore
+//                    String name = ItemNameTranslator.getLocalizedName(item, player).toLowerCase(Locale.ROOT);
+//                    if (name.contains(lower)) return true;
+//
+//                    ItemMeta meta = item.getItemMeta();
+//                    if (meta != null && meta.hasLore()) {
+//                        return meta.getLore().stream()
+//                                .filter(Objects::nonNull)
+//                                .map(line -> line.toLowerCase(Locale.ROOT))
+//                                .anyMatch(line -> line.contains(lower));
+//                    }
+//
+//                    return false;
+//                })
+//                .collect(Collectors.toList());
+//    }
 
 
 
@@ -269,5 +272,44 @@ public class VaultData {
         }
 
         return false;
+    }
+
+    public List<ItemStack> getFilteredItems(Player viewer, String search, ItemSortUtil.SortOption option, ItemSortUtil.SortDirection direction, int offset, int limit) {
+        List<ItemStack> filtered = filterItems(viewer, search); // Rechte + Suche
+        ItemSortUtil.sortItems(filtered, this, viewer, option, direction); // Sortierung
+
+        int toIndex = Math.min(filtered.size(), offset + limit);
+        if (offset >= filtered.size()) return List.of();
+
+        return filtered.subList(offset, toIndex).stream()
+                .map(item -> {
+                    if (item == null || item.getType().isAir()) return null;
+
+                    ItemStack copy = item.clone();
+                    ItemMeta meta = copy.getItemMeta();
+                    if (meta == null) return copy;
+
+                    List<String> lore = IslandVault.getLanguageManager().translateList(viewer, "menu.item.vaultItem.itemLore", Map.of(
+                            "amount", String.valueOf(getAmount(item)),
+                            "maxStackSize", String.valueOf(item.getMaxStackSize())
+                    ), true);
+
+                    if (viewer.isOp()) {
+                        lore.add("§8§m------------------------");
+                        lore.add("§6§lDEBUG-INFO");
+                        lore.add("§7Material: §f" + item.getType());
+                        lore.add("§8§m------------------------");
+                    }
+
+                    meta.setLore(lore);
+                    copy.setItemMeta(meta);
+                    return copy;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    public int getFilteredItemCount(Player viewer, String search) {
+        return filterItems(viewer, search).size();
     }
 }

@@ -29,7 +29,7 @@ public class ItemStackKey {
             copy.setItemMeta(meta);
         }
 
-        return new ItemStackKey(Base64ItemSerializer.serialize(copy));
+        return new ItemStackKey(Base64ItemSerializer.serializeItemStack(copy));
     }
 
     @Override

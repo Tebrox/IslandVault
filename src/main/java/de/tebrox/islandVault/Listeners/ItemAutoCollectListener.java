@@ -3,6 +3,7 @@ package de.tebrox.islandVault.Listeners;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.ItemGroupManager;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
+import de.tebrox.islandVault.Utils.PyrofishingUtils;
 import org.bukkit.*;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -49,7 +50,7 @@ public class ItemAutoCollectListener implements Listener {
     }
 
     private void tryAutoCollect(Item item, Island island) {
-        if(!item.isValid() || item.isDead()) {
+        if(!item.isValid() || item.isDead() || PyrofishingUtils.isPyroFishingItem(item.getItemStack())) {
             return;
         }
 

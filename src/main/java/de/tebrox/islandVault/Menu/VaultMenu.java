@@ -2,20 +2,15 @@ package de.tebrox.islandVault.Menu;
 
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Manager.VaultManager;
-import de.tebrox.islandVault.Utils.IslandUtils;
-import de.tebrox.islandVault.Utils.ItemSortUtil;
-import de.tebrox.islandVault.Utils.LuckPermsUtils;
-import de.tebrox.islandVault.Utils.PlayerDataUtils;
+import de.tebrox.islandVault.Utils.*;
 import it.unimi.dsi.fastutil.Pair;
 import me.kodysimpson.simpapi.colors.ColorTranslator;
 import me.kodysimpson.simpapi.exceptions.MenuManagerException;
 import me.kodysimpson.simpapi.exceptions.MenuManagerNotSetupException;
 import me.kodysimpson.simpapi.menu.PaginatedMenu;
 import me.kodysimpson.simpapi.menu.PlayerMenuUtility;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import net.kyori.adventure.text.Component;
+import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -74,6 +69,14 @@ public class VaultMenu extends PaginatedMenu {
         List<ItemStack> filteredItems = VaultManager.filterItems(player, vaultItems, searchQuery);
         ItemSortUtil.sortItems(filteredItems, ownerUUID, player, currentOption, currentDirection);
 
+        if(filteredItems.size() <= 0) {
+            filteredItems.add(NO_ITEMS);
+            for(int i = 1; i < maxItemsPerPage; i++) {
+                filteredItems.add(FILLER_GLASS);
+            }
+            return filteredItems;
+        }
+
         int size = filteredItems.size();
         int rest = size % maxItemsPerPage;
         if(rest > 0) {
@@ -105,6 +108,7 @@ public class VaultMenu extends PaginatedMenu {
         return false;
     }
 
+
     @Override
     public void handleMenu(InventoryClickEvent inventoryClickEvent) throws MenuManagerNotSetupException, MenuManagerException {
         if(inventoryClickEvent.getWhoClicked() instanceof Player player) {
@@ -114,6 +118,11 @@ public class VaultMenu extends PaginatedMenu {
             if(inventoryClickEvent.getClickedInventory() == player.getInventory()) {
                 int slot = inventoryClickEvent.getSlot();
                 ItemStack item = inventoryClickEvent.getCurrentItem();
+
+                if(PyrofishingUtils.isPyroFishingItem(item)) {
+                    return;
+                }
+
                 if(inventoryClickEvent.isShiftClick()) {
                     inventoryClickEvent.setCancelled(true);
                     if(inventoryClickEvent.isLeftClick()) {
@@ -184,6 +193,12 @@ public class VaultMenu extends PaginatedMenu {
                                 player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
                             }
                             break;
+                        case 52:
+                            if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
+                                if(inventoryClickEvent.isLeftClick()) {
+                                    IslandVault.getVaultManager().getVaults().get(player.getUniqueId()).openBackpack(player);
+                                }
+                            }
                         case 53:
                             if(!inventoryClickEvent.getCurrentItem().isSimilar(FILLER_GLASS)) {
                                 if(inventoryClickEvent.isLeftClick()) {
@@ -237,8 +252,17 @@ public class VaultMenu extends PaginatedMenu {
                         if(!isShiftClick) {
                             player.setItemOnCursor(handItem);
                         }else{
-                            if(player.getInventory().firstEmpty() != -1){
-                                player.getInventory().addItem(handItem);
+                            if (handItem != null && handItem.getType() != Material.AIR) {
+                                Map<Integer, ItemStack> leftovers = player.getInventory().addItem(handItem);
+
+                                for (ItemStack leftover : leftovers.values()) {
+                                    // Droppunkt: 1 Block vor dem Spieler in Blickrichtung, etwa auf Kopfhöhe
+                                    Location dropLoc = player.getLocation()
+                                            .add(player.getLocation().getDirection().normalize().multiply(1))
+                                            .add(0, 1, 0);
+
+                                    player.getWorld().dropItem(dropLoc, leftover);
+                                }
                             }
                         }
                         refreshData();
@@ -333,6 +357,8 @@ public class VaultMenu extends PaginatedMenu {
 
         // Close button
         inventory.setItem(49, makeItem(Material.BARRIER, ColorTranslator.translateColorCodes(IslandVault.getLanguageManager().translate(player, "menu.close")), false, false));
+
+        inventory.setItem(52, makeItem(Material.CHEST, "Inselrucksack", false, false, "§7Zusätzliches Inventar neben deinem Insellager", "§7Organisiere hier deine Items flexibel", "§eLinksklick, um deinen Inselrucksack zu öffnen"));
 
         int maxRadius = LuckPermsUtils.getMaxRadiusFromPermissions(IslandUtils.getIslandOwnerUUID(playerMenuUtility.getOwner()));
         if(maxRadius > 0) {

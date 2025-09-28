@@ -39,6 +39,11 @@ public class IslandListener implements Listener {
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {
             IslandTracker.setPlayerIsland(player.getUniqueId(), island);
+            UUID owner = island.getOwner();
+            if(!IslandVault.getVaultManager().getVaults().containsKey(owner)) {
+                IslandVault.getVaultManager().loadVault(owner);
+            }
+
         } else {
             // Spieler ist nicht auf einer Insel – sicherstellen, dass nichts altes bleibt
             IslandTracker.removePlayerIsland(player.getUniqueId());
@@ -58,7 +63,7 @@ public class IslandListener implements Listener {
                 if (IslandVault.getVaultManager().getVaults().containsKey(owner)) {
                     PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(owner);
                     IslandVault.getVaultManager().saveVault(playerVaultUtils);
-                    IslandVault.getVaultManager().getVaults().remove(owner);
+                    //IslandVault.getVaultManager().getVaults().remove(owner);
                 }
             }
         }
@@ -75,6 +80,10 @@ public class IslandListener implements Listener {
         Island island = IslandUtils.getIslandManager().getIslandAt(player.getLocation()).orElse(null);
         if (island != null) {
             IslandTracker.setPlayerIsland(player.getUniqueId(), island);
+            UUID owner = island.getOwner();
+            if(!IslandVault.getVaultManager().getVaults().containsKey(owner)) {
+                IslandVault.getVaultManager().loadVault(owner);
+            }
         } else {
             IslandTracker.removePlayerIsland(player.getUniqueId());
         }
@@ -95,7 +104,7 @@ public class IslandListener implements Listener {
                 if (IslandVault.getVaultManager().getVaults().containsKey(owner)) {
                     PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(owner);
                     IslandVault.getVaultManager().saveVault(playerVaultUtils);
-                    IslandVault.getVaultManager().getVaults().remove(owner);
+                    //IslandVault.getVaultManager().getVaults().remove(owner);
                 }
             }
         }

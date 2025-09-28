@@ -13,6 +13,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -110,6 +111,16 @@ public class VaultManager {
                 utils.setShowAutocollectMessage(data.getBoolean("Player.ShowAutocollectMessage"));
             }
 
+            // Backpack Items laden
+            if (data.contains("Backpack")) {
+                Inventory backpack = utils.getBackpack();
+                for (String key : data.getConfigurationSection("Backpack").getKeys(false)) {
+                    int slot = Integer.parseInt(key);
+                    ItemStack item = data.getItemStack("Backpack." + key);
+                    backpack.setItem(slot, item);
+                }
+            }
+
             vaults.put(ownerUUID, utils);
         }
     }
@@ -138,6 +149,13 @@ public class VaultManager {
             if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
                 data.set("Inventory." + material, amount);
             }
+        }
+
+        // Backpack Items speichern
+        Inventory backpack = playerVaultUtils.getBackpack();
+        for (int slot = 0; slot < backpack.getSize(); slot++) {
+            ItemStack item = backpack.getItem(slot);
+            if (item != null) data.set("Backpack." + slot, item);
         }
 
         try {

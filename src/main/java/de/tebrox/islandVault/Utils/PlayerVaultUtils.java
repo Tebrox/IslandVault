@@ -4,6 +4,7 @@ import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -19,9 +20,12 @@ public class PlayerVaultUtils {
     private boolean autoCollect = false;
     private boolean showAutocollectMessage = false;
 
+    private Inventory backpack;
+
     public PlayerVaultUtils(UUID ownerUUID, HashMap<Material, Integer> inventory) {
         this.inventory = inventory;
         this.ownerUUID = ownerUUID;
+        this.backpack = Bukkit.createInventory(null, 54, "Backpack"); // 54 Slots
     }
 
     public HashMap<Material, Integer> getInventory() {
@@ -72,5 +76,27 @@ public class PlayerVaultUtils {
 
     public void clearUnlockedMaterial() {
         unlockedMaterial.clear();
+    }
+
+    // --- Backpack Methoden ---
+
+    public Inventory getBackpack() {
+        return backpack;
+    }
+
+    public void openBackpack(Player player) {
+        player.openInventory(backpack);
+    }
+
+    public void addToBackpack(ItemStack item) {
+        backpack.addItem(item);
+    }
+
+    public void removeFromBackpack(ItemStack item) {
+        backpack.removeItem(item);
+    }
+
+    public void clearBackpack() {
+        backpack.clear();
     }
 }

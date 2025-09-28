@@ -3,19 +3,27 @@ package de.tebrox.islandVault;
 import de.tebrox.islandVault.Commands.AdminCommand.VaultAdminMainCommand;
 import de.tebrox.islandVault.Commands.VaultMainCommand;
 import de.tebrox.islandVault.Enums.Permissions;
+import de.tebrox.islandVault.Items.VaultChest;
+import de.tebrox.islandVault.Items.VaultChestItem;
 import de.tebrox.islandVault.Listeners.*;
 import de.tebrox.islandVault.Manager.*;
 import de.tebrox.islandVault.Manager.CommandManager.MainCommand;
 import de.tebrox.islandVault.Utils.*;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.eclipse.jdt.annotation.NonNull;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
@@ -40,6 +48,9 @@ public final class IslandVault extends JavaPlugin {
     private Map<String, Integer> radiusPermissionMap = new HashMap<>();
     private static LanguageManager languageManager;
     private boolean debug;
+
+    public static Map<Location, VaultChest> customChests = new HashMap<>();
+    public static Map<VaultChest, BukkitRunnable> runningVaultChestTasks = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -96,11 +107,17 @@ public final class IslandVault extends JavaPlugin {
 
         loadAutoCollectPermissions();
 
+        Bukkit.getPluginManager().registerEvents(new VaultChestListener(), this);
+        VaultChestItem.registerRecipe(this);
+
+        loadChests();
+
         new BukkitRunnable() {
             @Override
             public void run() {
+                LuckPerms lp = LuckPermsProvider.get();
+                IslandsManager islandsManager = IslandUtils.getIslandManager();
                 for(Player player : getServer().getOnlinePlayers()) {
-                    IslandsManager islandsManager = IslandUtils.getIslandManager();
                     if(islandsManager == null) {
                         //debugLogger.warning("Cannot load onlineplayer islands. Islandmanager is null!");
                     }
@@ -110,10 +127,37 @@ public final class IslandVault extends JavaPlugin {
                         UUID ownerUUID = island.getOwner();
 
                         IslandVault.getVaultManager().loadVault(ownerUUID);
+                        if (lp.getUserManager().getUser(ownerUUID) == null) {
+                            lp.getUserManager().loadUser(ownerUUID);
+                        }
                     }
                 }
             }
         }.runTaskLater(this, 40L);
+
+        // 2. Owner alle 60 Sekunden "touchen"
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                LuckPerms lp = LuckPermsProvider.get();
+                IslandsManager islandsManager = IslandUtils.getIslandManager();
+                for (Player player : getServer().getOnlinePlayers()) {
+                    if (islandsManager == null) {
+                        continue;
+                    }
+
+                    Island island = islandsManager.getIsland(player.getWorld(), player.getUniqueId());
+                    if (island != null) {
+                        UUID ownerUUID = island.getOwner();
+
+                        if (lp.getUserManager().getUser(ownerUUID) == null) {
+                            lp.getUserManager().loadUser(ownerUUID);
+                            System.out.println("Load user in luckperms cache: " + Bukkit.getOfflinePlayer(ownerUUID).getName());
+                        }
+                    }
+                }
+            }
+        }.runTaskTimerAsynchronously(this, 20L * 60, 20L * 60); // alle 60s
     }
 
     @Override
@@ -125,6 +169,10 @@ public final class IslandVault extends JavaPlugin {
             getVaultManager().getVaults().clear();
         }
 
+        saveChests();
+        for (BukkitRunnable task : runningVaultChestTasks.values()) {
+            task.cancel();
+        }
     }
 
     public static IslandVault getPlugin() {
@@ -252,5 +300,68 @@ public final class IslandVault extends JavaPlugin {
         this.debug = debug;
         getConfig().set("debug", debug);
         saveConfig();
+    }
+
+    private void loadChests() {
+        FileConfiguration cfg = getConfig();
+        if (!cfg.isConfigurationSection("chests")) return;
+
+        for (String key : cfg.getConfigurationSection("chests").getKeys(false)) {
+            Location loc = deserializeLoc(cfg.getString("chests." + key + ".loc"));
+            UUID owner = UUID.fromString(cfg.getString("chests." + key + ".owner"));
+            @NonNull Optional<Island> island = IslandUtils.getIslandManager().getIslandById(cfg.getString("chests." + key + ".islandID"));
+
+            VaultChest chest = new VaultChest(owner, loc, island.orElse(null));
+            ItemStack[] tempFilter = new ItemStack[9];
+
+            // Filteritems laden
+            if (cfg.isConfigurationSection("chests." + key + ".filter")) {
+                for (int i = 0; i < 9; i++) {
+                    ItemStack item = cfg.getItemStack("chests." + key + ".filter." + i);
+                    if (item != null) {
+                        tempFilter[i] = item;
+                    }
+                }
+            }
+            chest.setSavedFilter(tempFilter);
+
+            customChests.put(loc, chest);
+        }
+    }
+
+    public void saveChests() {
+        FileConfiguration cfg = getConfig();
+        cfg.set("chests", null); // clear
+
+        int id = 0;
+        for (VaultChest chest : customChests.values()) {
+            cfg.set("chests." + id + ".loc", serializeLoc(chest.getLocation()));
+            cfg.set("chests." + id + ".owner", chest.getOwner().toString());
+            cfg.set("chests." + id + ".islandID", chest.getIsland().getUniqueId());
+
+            // Filteritems speichern
+            ItemStack[] filter = chest.getSavedFilter();
+            for (int i = 0; i < filter.length; i++) {
+                cfg.set("chests." + id + ".filter." + i, filter[i]);
+            }
+
+            id++;
+        }
+        saveConfig();
+    }
+
+
+    private String serializeLoc(Location loc) {
+        return loc.getWorld().getName() + "," + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ();
+    }
+
+    private Location deserializeLoc(String s) {
+        String[] parts = s.split(",");
+        return new Location(
+                Bukkit.getWorld(parts[0]),
+                Integer.parseInt(parts[1]),
+                Integer.parseInt(parts[2]),
+                Integer.parseInt(parts[3])
+        );
     }
 }

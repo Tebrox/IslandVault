@@ -3,13 +3,11 @@ package de.tebrox.islandVault.Utils;
 import de.tebrox.islandVault.IslandVault;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 import world.bentobox.bentobox.managers.IslandsManager;
@@ -82,7 +80,6 @@ public class IslandUtils {
             return;
         }
 
-        // Inselbesitzer
         UUID ownerUUID = island.getOwner();
         Location centerBlock = island.getCenter();
         int radius = LuckPermsUtils.getMaxRadiusFromPermissions(ownerUUID);
@@ -96,10 +93,12 @@ public class IslandUtils {
         int maxX = island.getMaxX();
         int minZ = island.getMinZ();
         int maxZ = island.getMaxZ();
-        int minY = island.getY() - 5;
-        int maxY = island.getY() + 5;
 
-        if(isTimerActive(viewer)) {
+        World world = center.getWorld();
+        int minY = world.getMinHeight();
+        int maxY = world.getMaxHeight() - 1; // inclusive, also -1
+
+        if (isTimerActive(viewer)) {
             stopTimer(viewer);
         }
 
@@ -111,6 +110,11 @@ public class IslandUtils {
             final int cx = centerBlock.getBlockX();
             final int cz = centerBlock.getBlockZ();
 
+            // Sichtfeld/Distanz-Parameter
+            final double maxDistance = 60.0; // Reichweite in Blöcken
+            final double maxDistanceSquared = maxDistance * maxDistance;
+            final double maxAngle = Math.toRadians(90); // 90° Sichtkegel vor dem Spieler
+
             @Override
             public void run() {
                 if (ticksPassed >= totalTicks) {
@@ -121,46 +125,56 @@ public class IslandUtils {
                     return;
                 }
 
-                for (int y = minY; y <= maxY; y++) {
+                int y1 = Math.max(viewer.getLocation().getBlockY() - 12, minY);
+                int y2 = Math.min(viewer.getLocation().getBlockY() + 12, maxY);
 
+                for (int y = y1; y <= y2; y++) {
                     int x1 = Math.max(cx - radius, minX);
                     int x2 = Math.min(cx + radius, maxX);
                     int z1 = Math.max(cz - radius, minZ);
                     int z2 = Math.min(cz + radius, maxZ);
 
-                    // Linie entlang X bei z1
                     for (int x = x1; x <= x2; x++) {
-                        viewer.spawnParticle(particle, x + 0.5, y + 0.1, z1 + 0.5, 0, 0, 0, 0, 0);
+                        spawnIfVisible(viewer, particle, x + 0.5, y + 0.1, z1 + 0.5, maxDistanceSquared, maxAngle);
+                        spawnIfVisible(viewer, particle, x + 0.5, y + 0.1, z2 + 0.5, maxDistanceSquared, maxAngle);
                     }
-
-                    // Linie entlang X bei z2
-                    for (int x = x1; x <= x2; x++) {
-                        viewer.spawnParticle(particle, x + 0.5, y + 0.1, z2 + 0.5, 0, 0, 0, 0, 0);
-                    }
-
-                    // Linie entlang Z bei x1
                     for (int z = z1 + 1; z < z2; z++) {
-                        viewer.spawnParticle(particle, x1 + 0.5, y + 0.1, z + 0.5, 0, 0, 0, 0, 0);
-                    }
-
-                    // Linie entlang Z bei x2
-                    for (int z = z1 + 1; z < z2; z++) {
-                        viewer.spawnParticle(particle, x2 + 0.5, y + 0.1, z + 0.5, 0, 0, 0, 0, 0);
+                        spawnIfVisible(viewer, particle, x1 + 0.5, y + 0.1, z + 0.5, maxDistanceSquared, maxAngle);
+                        spawnIfVisible(viewer, particle, x2 + 0.5, y + 0.1, z + 0.5, maxDistanceSquared, maxAngle);
                     }
                 }
-
 
                 if (ticksPassed % 20 == 0) {
                     int secondsLeft = (totalTicks - ticksPassed) / 20;
-                    viewer.sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(IslandVault.getLanguageManager().translate(viewer, "radiusActionbarTimer", Map.of("secondsLeft", String.valueOf(secondsLeft)), true)));
+                    viewer.sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(
+                            IslandVault.getLanguageManager().translate(viewer, "radiusActionbarTimer",
+                                    Map.of("secondsLeft", String.valueOf(secondsLeft)), true)));
                 }
                 ticksPassed += 2;
+            }
 
+            private void spawnIfVisible(Player player, Particle particle,
+                                        double x, double y, double z,
+                                        double maxDistSquared, double maxAngle) {
+                Location eye = player.getEyeLocation();
+                Vector toParticle = new Vector(x - eye.getX(), y - eye.getY(), z - eye.getZ());
+
+                // Entfernung prüfen
+                if (toParticle.lengthSquared() > maxDistSquared) return;
+
+                // Winkel prüfen (gegen Blickrichtung)
+                Vector direction = eye.getDirection();
+                double angle = direction.angle(toParticle);
+                if (angle > maxAngle) return;
+
+                player.spawnParticle(particle, x, y, z, 0, 0, 0, 0, 0);
             }
         };
+
         activeTimers.put(viewer.getUniqueId(), task);
         task.runTaskTimer(IslandVault.getPlugin(), 0L, 2L);
     }
+
 
     public static boolean isTimerActive(Player player) {
         return activeTimers.containsKey(player.getUniqueId());

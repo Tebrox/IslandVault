@@ -6,7 +6,7 @@
 
     <groupId>de.tebrox</groupId>
     <artifactId>IslandVault</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.5</version>
     <packaging>jar</packaging>
 
     <name>IslandVault</name>

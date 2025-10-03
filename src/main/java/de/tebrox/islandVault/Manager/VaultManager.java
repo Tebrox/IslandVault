@@ -2,6 +2,7 @@ package de.tebrox.islandVault.Manager;
 
 import de.tebrox.islandVault.Events.VaultUpdateEvent;
 import de.tebrox.islandVault.IslandVault;
+import de.tebrox.islandVault.Listeners.VaultChestListener;
 import de.tebrox.islandVault.Menu.VaultMenu;
 import de.tebrox.islandVault.Utils.ItemNameTranslator;
 import de.tebrox.islandVault.Utils.LuckPermsUtils;
@@ -16,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -122,6 +124,10 @@ public class VaultManager {
             }
 
             vaults.put(ownerUUID, utils);
+
+            IslandVault.customChests.values().stream()
+                    .filter(chest -> chest.getIsland().getOwner().equals(ownerUUID))
+                    .forEach(VaultChestListener::startChestTask);
         }
     }
 
@@ -151,6 +157,7 @@ public class VaultManager {
             }
         }
 
+        data.set("Backpack", null);
         // Backpack Items speichern
         Inventory backpack = playerVaultUtils.getBackpack();
         for (int slot = 0; slot < backpack.getSize(); slot++) {
@@ -164,6 +171,19 @@ public class VaultManager {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public void unloadVault(PlayerVaultUtils playerVaultUtils, UUID owner) {
+        saveVault(playerVaultUtils);
+
+        IslandVault.customChests.values().stream()
+                .filter(chest -> chest.getIsland().getOwner().equals(owner))
+                .forEach(chest -> {
+                    BukkitRunnable task = IslandVault.runningVaultChestTasks.remove(chest);
+                    if (task != null) task.cancel();
+                });
+
+        getVaults().remove(owner);
     }
 
     /**
@@ -253,10 +273,13 @@ public class VaultManager {
     }
 
     public ItemStack getItemFromVault(Material material, int amount, UUID ownerUUID, Player player) {
-        if(getVaults().containsKey(ownerUUID)) {
+        //Bukkit.getLogger().info("[Vault] getItemFromVault für " + material + " von " + ownerUUID);
+        if(!getVaults().containsKey(ownerUUID)) {
+            //Bukkit.getLogger().info("[Vault] Kein Vault für " + ownerUUID);
+        } else {
             PlayerVaultUtils playerVaultUtils = getVaults().get(ownerUUID);
 
-            if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
+            /**if(playerVaultUtils.getUnlockedMaterial().contains(material)) {
                 for(Map.Entry<Material, Integer> entry : playerVaultUtils.getInventory().entrySet()) {
                     Material key = entry.getKey();
                     int value = entry.getValue();
@@ -268,6 +291,19 @@ public class VaultManager {
                         return playerVaultUtils.setItem(material, value, amount, player);
                     }
                 }
+            }**/
+
+            if(!playerVaultUtils.getUnlockedMaterial().contains(material)) {
+                //Bukkit.getLogger().info("[Vault] Material " + material + " nicht freigeschaltet");
+            } else {
+                //Bukkit.getLogger().info("[Vault] Inventory: " + playerVaultUtils.getInventory());
+
+                int value = playerVaultUtils.getInventory().getOrDefault(material, 0);
+                //Bukkit.getLogger().info("[Vault] Bestand von " + material + " = " + value);
+                if(value == 0) return null;
+
+                return playerVaultUtils.setItem(material, value, amount, player);
+
             }
         }
         return null;
@@ -332,5 +368,9 @@ public class VaultManager {
                 });
             }
         }
+    }
+
+    public boolean hasViewers(UUID islandOwner) {
+        return openMenus.containsKey(islandOwner);
     }
 }

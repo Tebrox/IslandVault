@@ -25,7 +25,7 @@ public class PlayerVaultUtils {
     public PlayerVaultUtils(UUID ownerUUID, HashMap<Material, Integer> inventory) {
         this.inventory = inventory;
         this.ownerUUID = ownerUUID;
-        this.backpack = Bukkit.createInventory(null, 54, "Backpack"); // 54 Slots
+        this.backpack = Bukkit.createInventory(null, 54, "§5Inselrucksack"); // 54 Slots
     }
 
     public HashMap<Material, Integer> getInventory() {
@@ -65,10 +65,11 @@ public class PlayerVaultUtils {
     public ItemStack setItem(Material material, int vaultAmount, int getAmount, Player player) {
         int toExtract = Math.min(vaultAmount, getAmount); // tatsächliche Entnahmemenge
 
-        VaultUpdateEvent event = new VaultUpdateEvent(player, ownerUUID, material, -toExtract, false);
-        Bukkit.getPluginManager().callEvent(event);
-        if(event.isCancelled()) return null;
-
+        if(!(player == null)) {
+            VaultUpdateEvent event = new VaultUpdateEvent(player, ownerUUID, material, -toExtract, false);
+            Bukkit.getPluginManager().callEvent(event);
+            if(event.isCancelled()) return null;
+        }
         inventory.put(material, vaultAmount - toExtract); // neue Menge speichern
 
         return new ItemStack(material, toExtract);

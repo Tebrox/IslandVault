@@ -11,6 +11,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VaultChestItem {
 
     public static final NamespacedKey CHEST_KEY = new NamespacedKey(IslandVault.getPlugin(), "vault_chest");
@@ -22,6 +25,20 @@ public class VaultChestItem {
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName("§6Inseltruhe");
         meta.setCustomModelData(CUSTOM_MODEL_DATA);
+
+        List<String> lore = new ArrayList<>();
+        lore.add("§7Spezielle Truhe für dein Insel-Lager");
+        lore.add(" ");
+        lore.add("§eSneak + Rechtsklick§7 zum Öffnen der Filter-Einstellungen");
+        lore.add("§eFilter§7 bestimmt, welche Items importiert oder exportiert werden");
+        lore.add(" ");
+        lore.add("§bModus: §6Einlagerung §7→ zieht Items §7aus der Chest ins Vault");
+        lore.add("§bModus: §dAuslagerung §7→ füllt Items §7aus dem Vault in die Chest");
+        lore.add(" ");
+        lore.add("§8Der Modus kann jederzeit im Filter-Menü geändert werden.");
+
+        meta.setLore(lore);
+
         item.setItemMeta(meta);
         return item;
     }

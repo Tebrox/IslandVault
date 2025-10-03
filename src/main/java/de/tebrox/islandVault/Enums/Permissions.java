@@ -11,6 +11,7 @@ public enum Permissions {
     OPEN_SETTINGS("islandvault.command.openSettings"),
     HELP("islandvault.command.help"),
     USE_SEARCH("islandvault.command.useSearch"),
+    USE_BACKPACK("islandvault.command.useBackpack"),
 
     ADMIN_MAIN("islandvault.command.admin"),
     ADMIN_HELP("islandvault.command.admin.help"),

@@ -65,7 +65,20 @@ public class ItemAutoCollectListener implements Listener {
         if (radius <= 0) return;
 
         var center = island.getCenter();
-        if (item.getLocation().distanceSquared(center) > radius * radius) return;
+        //if (item.getLocation().distanceSquared(center) > radius * radius) return;
+
+        Location loc = item.getLocation();
+
+        // Höhe prüfen
+        int y = loc.getBlockY();
+        if (y < -64 || y > 319) return;
+
+        // Abstand nur in X/Z berechnen
+        double dx = loc.getX() - center.getX();
+        double dz = loc.getZ() - center.getZ();
+        double distSquared = dx * dx + dz * dz;
+
+        if (distSquared > radius * radius) return;
 
         ItemStack baseStack = item.getItemStack();
 

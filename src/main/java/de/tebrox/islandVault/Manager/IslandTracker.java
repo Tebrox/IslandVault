@@ -34,6 +34,10 @@ public class IslandTracker {
             UUID ownerUUID = island.getOwner();
             LuckPerms lp = LuckPermsProvider.get();
 
+            if(!IslandVault.getVaultManager().getVaults().containsKey(ownerUUID)) {
+                IslandVault.getVaultManager().getPlayerVaultItems(Bukkit.getPlayer(playerUUID), island.getOwner());
+            }
+
             if (lp.getUserManager().getUser(ownerUUID) == null) {
                 lp.getUserManager().loadUser(ownerUUID);
                 System.out.println("Load user in luckperms cache: " + Bukkit.getOfflinePlayer(ownerUUID).getName());
@@ -115,8 +119,7 @@ public class IslandTracker {
             UUID owner = island.getOwner();
             if (IslandVault.getVaultManager().getVaults().containsKey(owner)) {
                 PlayerVaultUtils playerVaultUtils = IslandVault.getVaultManager().getVaults().get(owner);
-                IslandVault.getVaultManager().saveVault(playerVaultUtils);
-                IslandVault.getVaultManager().getVaults().remove(owner);
+                IslandVault.getVaultManager().unloadVault(playerVaultUtils, owner);
             }
 
             return island != null && island.getUniqueId().equals(islandUUID);

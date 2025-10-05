@@ -5,64 +5,101 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Stellt das spezielle VaultChest-Item dar,
+ * das Spieler platzieren können, um eine Inseltruhe zu erzeugen.
+ */
 public class VaultChestItem {
 
-    public static final NamespacedKey CHEST_KEY = new NamespacedKey(IslandVault.getPlugin(), "vault_chest");
+    public static final int CUSTOM_MODEL_DATA = 770001;
+    public static final NamespacedKey CHEST_KEY =
+            new NamespacedKey(IslandVault.getPlugin(), "vault_chest");
 
-    public static final int CUSTOM_MODEL_DATA = 770001; // eindeutige Zahl
-
+    /**
+     * Erstellt das eigentliche Inseltruhen-Item mit Lore, Name und NBT-Markierung.
+     */
     public static ItemStack createCustomChest() {
         ItemStack item = new ItemStack(Material.CHEST);
         ItemMeta meta = item.getItemMeta();
+
         meta.setDisplayName("§6Inseltruhe");
         meta.setCustomModelData(CUSTOM_MODEL_DATA);
 
         List<String> lore = new ArrayList<>();
         lore.add("§7Spezielle Truhe für dein Insel-Lager");
-        lore.add(" ");
-        lore.add("§eSneak + Rechtsklick§7 zum Öffnen der Filter-Einstellungen");
-        lore.add("§eFilter§7 bestimmt, welche Items importiert oder exportiert werden");
-        lore.add(" ");
-        lore.add("§bModus: §6Einlagerung §7→ zieht Items §7aus der Chest ins Vault");
-        lore.add("§bModus: §dAuslagerung §7→ füllt Items §7aus dem Vault in die Chest");
-        lore.add(" ");
-        lore.add("§8Der Modus kann jederzeit im Filter-Menü geändert werden.");
+        lore.add("");
+        lore.add("§eSneak + Rechtsklick§7 → öffnet Filter-Einstellungen");
+        lore.add("§7Der Filter bestimmt, welche Items");
+        lore.add("§7automatisch ein- oder ausgelagert werden.");
+        lore.add("");
+        lore.add("§bModus §aEinlagerung§7: Items gehen ins Vault");
+        lore.add("§bModus §dAuslagerung§7: Items kommen aus dem Vault");
+        lore.add("");
+        lore.add("§8(Platzierung: Nur Single-Truhen!)");
 
         meta.setLore(lore);
+
+        // Tag setzen
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        pdc.set(CHEST_KEY, PersistentDataType.BYTE, (byte) 1);
 
         item.setItemMeta(meta);
         return item;
     }
 
+    /**
+     * Prüft, ob ein Item eine gültige VaultChest ist.
+     */
     public static boolean isCustomChest(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return false;
+        if (item == null || item.getType() != Material.CHEST) return false;
+        if (!item.hasItemMeta()) return false;
+
         ItemMeta meta = item.getItemMeta();
-        return meta.hasCustomModelData() && meta.getCustomModelData() == CUSTOM_MODEL_DATA;
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+
+        // sichere Erkennung über PersistentDataKey ODER CustomModelData
+        boolean hasKey = pdc.has(CHEST_KEY, PersistentDataType.BYTE);
+        boolean hasModelData = meta.hasCustomModelData()
+                && meta.getCustomModelData() == CUSTOM_MODEL_DATA;
+
+        return hasKey || hasModelData;
     }
 
-    public static void registerRecipe(Plugin plugin) {
-        // Das Item, das beim Craften rauskommt
-        ItemStack result = createCustomChest();
+    /**
+     * Registriert ein Shapeless-Rezept für die VaultChest.
+     * @param plugin dein Plugin
+     */
+    public static void registerRecipes(Plugin plugin) {
+        registerVaultChestRecipe(plugin);
+    }
 
-        // Eindeutiger Key für das Rezept
-        NamespacedKey key = new NamespacedKey(plugin, "inseltruhe");
+// ============================================================
+// ==========      VaultChest Rezept-Registrierung     =========
+// ============================================================
 
-        // Shapeless Rezept erstellen
+    private static void registerVaultChestRecipe(Plugin plugin) {
+        NamespacedKey key = new NamespacedKey(plugin, "vault_chest_dynamic");
+
+        // Nur hinzufügen, wenn noch nicht vorhanden
+        if (Bukkit.getRecipe(key) != null) return;
+
+        // Ergebnis ist egal – wird im Listener dynamisch ersetzt
+        ItemStack result = new ItemStack(Material.CHEST);
+
         ShapelessRecipe recipe = new ShapelessRecipe(key, result);
-
-        // Zutat hinzufügen (nur eine Chest)
         recipe.addIngredient(Material.CHEST);
 
-        // Rezept registrieren
         Bukkit.addRecipe(recipe);
+        plugin.getLogger().info("[VaultChestItem] Dynamisches Rezept 'Inseltruhe <-> normale Chest' registriert.");
     }
+
 }

@@ -126,6 +126,6 @@ public class ConfigUpdater {
             counter++;
         }
         Files.copy(configFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
-        System.out.println("Config-Backup erstellt: " + backupFile.getName());
+        //System.out.println("Config-Backup erstellt: " + backupFile.getName());
     }
 }

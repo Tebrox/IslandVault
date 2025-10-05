@@ -2,6 +2,7 @@ package de.tebrox.islandVault;
 
 import de.tebrox.islandVault.Commands.AdminCommand.VaultAdminMainCommand;
 import de.tebrox.islandVault.Commands.VaultMainCommand;
+import de.tebrox.islandVault.Converter.ItemGroupConfigConverter;
 import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Items.VaultChest;
 import de.tebrox.islandVault.Items.VaultChestItem;
@@ -37,8 +38,10 @@ import java.util.logging.Formatter;
 public final class IslandVault extends JavaPlugin {
 
     private static IslandVault plugin;
+    private static ConfigManager configManager;
     private static ItemManager itemManager;
     private static VaultManager vaultManager;
+    private static VaultChestManager vaultChestManager;
     FileConfiguration config = getConfig();
     private static MainCommand mainCommand;
     private static MainCommand adminMainCommand;
@@ -47,9 +50,6 @@ public final class IslandVault extends JavaPlugin {
     private static LanguageManager languageManager;
     private boolean debug;
 
-    public static Map<Location, VaultChest> customChests = new HashMap<>();
-    public static Map<VaultChest, BukkitRunnable> runningVaultChestTasks = new HashMap<>();
-    public static Map<String, List<VaultChest>> pendingChestsByWorldName;
 
     @Override
     public void onEnable() {
@@ -59,25 +59,11 @@ public final class IslandVault extends JavaPlugin {
         if(!plugin.getDataFolder().exists()) {
             plugin.getDataFolder().mkdirs();
         }
+        configManager = new ConfigManager(plugin);
+        configManager.loadConfig("config");
+        //saveDefaultConfig(); // stellt sicher, dass config.yml im JAR vorhanden ist
 
-        saveDefaultConfig(); // stellt sicher, dass config.yml im JAR vorhanden ist
-
-        File configFile = new File(getDataFolder(), "config.yml");
-        ConfigUpdater updater = new ConfigUpdater(configFile);
-
-        InputStream defaultConfigStream = getResource("config.yml");
-        if (defaultConfigStream == null) {
-            getLogger().severe("Default config.yml konnte nicht gefunden werden!");
-            return;
-        }
-
-        try {
-            updater.update(defaultConfigStream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        reloadConfig();
+        //reloadConfig();
 
         PluginDependencyChecker.setup(new String[]{"BentoBox", "Luckperms"}, new String[]{});
         PluginDependencyChecker.checkDependencies();
@@ -102,12 +88,17 @@ public final class IslandVault extends JavaPlugin {
 
         reloadPluginConfig(null);
 
+
+
+        vaultChestManager = new VaultChestManager(this);
+        vaultChestManager.loadAllChests();
+
         registerCommandsAndEvents();
 
         loadAutoCollectPermissions();
 
-        Bukkit.getPluginManager().registerEvents(new VaultChestListener(), this);
-        VaultChestItem.registerRecipe(this);
+        VaultChestItem.registerRecipes(this);
+        getServer().getPluginManager().registerEvents(new VaultChestRecipeListener(), this);
 
         new BukkitRunnable() {
             @Override
@@ -149,7 +140,7 @@ public final class IslandVault extends JavaPlugin {
 
                         if (lp.getUserManager().getUser(ownerUUID) == null) {
                             lp.getUserManager().loadUser(ownerUUID);
-                            System.out.println("Load user in luckperms cache: " + Bukkit.getOfflinePlayer(ownerUUID).getName());
+                            //System.out.println("Load user in luckperms cache: " + Bukkit.getOfflinePlayer(ownerUUID).getName());
                         }
                     }
                 }
@@ -166,10 +157,7 @@ public final class IslandVault extends JavaPlugin {
             getVaultManager().getVaults().clear();
         }
 
-        saveChests();
-        for (BukkitRunnable task : runningVaultChestTasks.values()) {
-            task.cancel();
-        }
+        vaultChestManager.flushAndStopAsyncSave();
     }
 
     public static IslandVault getPlugin() {
@@ -184,6 +172,8 @@ public final class IslandVault extends JavaPlugin {
         return vaultManager;
     }
 
+    public static VaultChestManager getVaultChestManager() { return vaultChestManager; }
+
     private void setupLogger() {
 
         Logger logger = getLogger(); // Verwende den Bukkit-Logger
@@ -196,14 +186,7 @@ public final class IslandVault extends JavaPlugin {
 
                 @Override
                 public String format(LogRecord record) {
-                    String prefix = "[IslandVault] ";
-
-                    // Optional: Level anzeigen, aber nur wenn nicht INFO
-                    if (record.getLevel() != Level.INFO) {
-                        prefix += record.getLevel().getName() + ": ";
-                    }
-
-                    return prefix + record.getMessage() + "\n";
+                    return record.getMessage() + "\n";
                 }
             });
         }
@@ -211,8 +194,8 @@ public final class IslandVault extends JavaPlugin {
 
     private void registerPermissions() {
         ConfigurationSection section = config.getConfigurationSection(Permissions.GROUPS_CONFIG.getLabel());
-
-        ItemGroupManager.init(this);
+        ItemGroupConfigConverter.convertOldGroups(this, configManager);
+        ItemGroupManager.init(plugin, configManager);
 
         for(Material material : itemManager.getMaterialList()) {
             String permission = Permissions.VAULT.getLabel() + material.toString().toLowerCase();
@@ -238,8 +221,9 @@ public final class IslandVault extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ItemAutoCollectListener(this), this);
         getServer().getPluginManager().registerEvents(new IslandListener(), this);
         getServer().getPluginManager().registerEvents(new VaultEventListener(adminVaultLogger), this);
+        getServer().getPluginManager().registerEvents(new ChunkLoadListener(this), this);
 
-        getServer().getPluginManager().registerEvents(new WorldLoadListener(this), this);
+        //getServer().getPluginManager().registerEvents(new WorldLoadListener(this), this);
     }
 
     public void loadAutoCollectPermissions() {
@@ -276,6 +260,8 @@ public final class IslandVault extends JavaPlugin {
         return languageManager;
     }
 
+    public static ConfigManager getConfigManager() { return configManager; }
+
     public void reloadPluginConfig(CommandSender sender) {
         reloadConfig();
         debug = getConfig().getBoolean("debug", false);
@@ -299,169 +285,5 @@ public final class IslandVault extends JavaPlugin {
         this.debug = debug;
         getConfig().set("debug", debug);
         saveConfig();
-    }
-
-    public void loadChests() {
-        FileConfiguration cfg = getConfig();
-        if (!cfg.isConfigurationSection("chests")) return;
-
-        for (String key : cfg.getConfigurationSection("chests").getKeys(false)) {
-            String locString = cfg.getString("chests." + key + ".loc");
-            if (locString == null || locString.isEmpty()) {
-                getLogger().warning("Chest " + key + " hat keine Location, wird übersprungen.");
-                continue;
-            }
-
-            String[] parts = locString.split(",");
-            if (parts.length != 4) {
-                getLogger().warning("Chest " + key + " Location fehlerhaft, wird übersprungen.");
-                continue;
-            }
-
-            String worldName = parts[0];
-            int x = Integer.parseInt(parts[1]);
-            int y = Integer.parseInt(parts[2]);
-            int z = Integer.parseInt(parts[3]);
-
-            World world = Bukkit.getWorld(worldName);
-
-            // Owner laden
-            String ownerStr = cfg.getString("chests." + key + ".owner");
-            if (ownerStr == null) {
-                getLogger().warning("Chest " + key + " hat keinen Besitzer, wird übersprungen.");
-                continue;
-            }
-            UUID owner = UUID.fromString(ownerStr);
-
-            // Island laden
-            String islandID = cfg.getString("chests." + key + ".islandID");
-            Island island = null;
-            if (islandID != null) {
-                island = IslandUtils.getIslandManager().getIslandById(islandID).orElse(null);
-                if (island == null) {
-                    getLogger().warning("Island " + islandID + " der Chest " + key + " konnte nicht gefunden werden.");
-                }
-            }
-
-            // VaultChest erstellen
-            Location loc = (world != null) ? new Location(world, x, y, z) : new Location(null, x, y, z);
-            VaultChest chest = new VaultChest(owner, loc, island);
-
-            boolean inputMode = cfg.getString("chests." + key + ".mode").equals("input") ? true : false;
-            chest.setMode(inputMode);
-
-            // Filteritems laden
-            ItemStack[] tempFilter = new ItemStack[9];
-            if (cfg.isConfigurationSection("chests." + key + ".filter")) {
-                for (int i = 0; i < 9; i++) {
-                    ItemStack item = cfg.getItemStack("chests." + key + ".filter." + i);
-                    if (item != null) tempFilter[i] = item;
-                }
-            }
-            chest.setSavedFilter(tempFilter);
-
-            // Welt vorhanden?
-            if (world == null) {
-                // Pending-Map
-                pendingChestsByWorldName
-                        .computeIfAbsent(worldName, k -> new ArrayList<>())
-                        .add(chest);
-                getLogger().info("Chest " + key + " wird geladen, sobald Welt " + worldName + " verfügbar ist.");
-            } else {
-                // Sofort laden
-                customChests.put(loc, chest);
-                getLogger().info("Chest " + key + " geladen: " + serializeLoc(loc));
-            }
-        }
-    }
-
-
-
-    public void saveChests() {
-        FileConfiguration cfg = getConfig();
-
-        // Kompletten Abschnitt "chests" zurücksetzen
-        cfg.set("chests", null);
-
-        // Wir gruppieren nach Weltname
-        Map<String, Integer> worldIndexMap = new HashMap<>();
-
-        for (VaultChest chest : customChests.values()) {
-            Location loc = chest.getLocation();
-            if (loc == null) {
-                getLogger().warning("Chest ohne Location übersprungen.");
-                continue;
-            }
-
-            World world = loc.getWorld();
-            if (world == null) {
-                getLogger().warning("Chest mit null-World übersprungen: " + loc);
-                continue;
-            }
-
-            String worldName = world.getName();
-            int index = worldIndexMap.getOrDefault(worldName, 0);
-            String path = "chests." + worldName + "." + index;
-
-            // Location
-            cfg.set(path + ".loc", serializeLoc(loc));
-
-            // Owner
-            cfg.set(path + ".owner", chest.getOwner().toString());
-
-            //InputMode
-            cfg.set(path + ".mode", chest.isInputChest() ? "input" : "output");
-
-            // Island
-            if (chest.getIsland() != null) {
-                cfg.set(path + ".islandID", chest.getIsland().getUniqueId().toString());
-            }
-
-            // Filter
-            ItemStack[] filter = chest.getSavedFilter();
-            if (filter != null) {
-                for (int i = 0; i < filter.length; i++) {
-                    if (filter[i] != null) {
-                        cfg.set(path + ".filter." + i, filter[i]);
-                    }
-                }
-            }
-
-            // Index hochzählen
-            worldIndexMap.put(worldName, index + 1);
-        }
-
-        saveConfig();
-    }
-
-
-
-    public String serializeLoc(Location loc) {
-        if (loc == null) {
-            return null;
-        }
-
-        String worldName = (loc.getWorld() != null) ? loc.getWorld().getName() : "UNKNOWN";
-        return worldName + "," + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ();
-    }
-
-    public Location deserializeLoc(String s) {
-        if (s == null || s.isEmpty()) {
-            return null;
-        }
-
-        String[] parts = s.split(",");
-        if (parts.length != 4) {
-            return null;
-        }
-
-        String worldName = parts[0];
-        World world = Bukkit.getWorld(worldName); // kann null sein, wenn Welt nicht geladen
-
-        int x = Integer.parseInt(parts[1]);
-        int y = Integer.parseInt(parts[2]);
-        int z = Integer.parseInt(parts[3]);
-
-        return (world != null) ? new Location(world, x, y, z) : new Location(null, x, y, z);
     }
 }

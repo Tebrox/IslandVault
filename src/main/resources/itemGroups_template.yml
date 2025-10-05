@@ -1,0 +1,4 @@
+# Template für ItemGroups-Daten
+# Wird automatisch verwendet wenn die Datei im Plugin Ordner fehlen sollte
+
+groups: {}

@@ -40,7 +40,7 @@ public class IslandTracker {
 
             if (lp.getUserManager().getUser(ownerUUID) == null) {
                 lp.getUserManager().loadUser(ownerUUID);
-                System.out.println("Load user in luckperms cache: " + Bukkit.getOfflinePlayer(ownerUUID).getName());
+                //System.out.println("Load user in luckperms cache: " + Bukkit.getOfflinePlayer(ownerUUID).getName());
             }
         }
     }
@@ -95,7 +95,7 @@ public class IslandTracker {
 
     private static void scheduleExpire(String islandUUID) {
         if (islandRemovalTasks.containsKey(islandUUID)) return; // schon eingeplant
-        System.out.println("Insel " + islandUUID + " ist in der Entladeliste!");
+        //System.out.println("Insel " + islandUUID + " ist in der Entladeliste!");
         BukkitTask task = Bukkit.getScheduler().runTaskLater(IslandVault.getPlugin(), () -> {
             if (isIslandEmpty(islandUUID)) {
                 unloadIsland(islandUUID);
@@ -129,6 +129,6 @@ public class IslandTracker {
         islandRemovalTasks.remove(islandUUID);
 
         // Hier Persistenz oder sonstiges Unload-Handling einfügen
-        System.out.println("Insel " + islandUUID + " wurde entladen und aus playerIslands entfernt.");
+        //System.out.println("Insel " + islandUUID + " wurde entladen und aus playerIslands entfernt.");
     }
 }

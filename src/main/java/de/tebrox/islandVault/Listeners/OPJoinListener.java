@@ -1,5 +1,6 @@
 package de.tebrox.islandVault.Listeners;
 
+import de.tebrox.islandVault.Enums.Prefix;
 import de.tebrox.islandVault.IslandVault;
 import de.tebrox.islandVault.Update.GitHubUpdateChecker;
 import de.tebrox.islandVault.Update.VersionComparator;
@@ -43,10 +44,10 @@ public class OPJoinListener implements Listener {
                         for (Player player : Bukkit.getOnlinePlayers()) {
                             if (!player.isOp()) continue;
 
-                            player.sendMessage(ChatColor.GREEN + "[IslandVault] " + ChatColor.GOLD + "Es ist eine neue Version verfügbar: " + ChatColor.YELLOW + latest);
-                            player.sendMessage(ChatColor.GREEN + "[IslandVault] " + ChatColor.GOLD + "Aktuelle Version: " + ChatColor.YELLOW + current);
+                            player.sendMessage(ChatColor.GREEN + Prefix.MAIN.getLabel() + " " + ChatColor.GOLD + "Es ist eine neue Version verfügbar: " + ChatColor.YELLOW + latest);
+                            player.sendMessage(ChatColor.GREEN + Prefix.MAIN.getLabel() + " " + ChatColor.GOLD + "Aktuelle Version: " + ChatColor.YELLOW + current);
 
-                            TextComponent prefix = new TextComponent(ChatColor.GREEN + "[IslandVault] " + ChatColor.AQUA + "Klicke ");
+                            TextComponent prefix = new TextComponent(ChatColor.GREEN + Prefix.MAIN.getLabel() + " " + ChatColor.AQUA + "Klicke ");
                             TextComponent clickable = new TextComponent(ChatColor.YELLOW + "[hier]");
                             clickable.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, releaseUrl));
                             clickable.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,

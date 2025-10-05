@@ -125,9 +125,9 @@ public class VaultManager {
 
             vaults.put(ownerUUID, utils);
 
-            IslandVault.customChests.values().stream()
-                    .filter(chest -> chest.getIsland().getOwner().equals(ownerUUID))
-                    .forEach(VaultChestListener::startChestTask);
+            //IslandVault.customChests.values().stream()
+            //        .filter(chest -> chest.getIsland().getOwner().equals(ownerUUID))
+            //        .forEach(VaultChestListener::startChestTask);
         }
     }
 
@@ -176,13 +176,14 @@ public class VaultManager {
     public void unloadVault(PlayerVaultUtils playerVaultUtils, UUID owner) {
         saveVault(playerVaultUtils);
 
+        /**
         IslandVault.customChests.values().stream()
                 .filter(chest -> chest.getIsland().getOwner().equals(owner))
                 .forEach(chest -> {
                     BukkitRunnable task = IslandVault.runningVaultChestTasks.remove(chest);
                     if (task != null) task.cancel();
                 });
-
+         **/
         getVaults().remove(owner);
     }
 

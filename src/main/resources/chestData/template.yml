@@ -1,0 +1,4 @@
+# Template für VaultChest-Daten
+# Wird automatisch verwendet, wenn eine neue Welt-Datei angelegt wird.
+
+chests: {}

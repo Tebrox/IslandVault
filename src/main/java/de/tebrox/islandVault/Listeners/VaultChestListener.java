@@ -346,6 +346,7 @@ public class VaultChestListener implements Listener {
         // Task neu starten (nach GUI schließen)
         Bukkit.getScheduler().runTaskLater(IslandVault.getPlugin(), () ->
                 manager().startAutoTask(chest, createChestTask(chest)), 8L);
+//TODO aus task Liste vorher entfernen
     }
 
     // -----------------------------

@@ -1,4 +1,35 @@
-# Template für VaultChest-Daten
-# Wird automatisch verwendet, wenn eine neue Welt-Datei angelegt wird.
+# ============================================================
+# IslandVault - VaultChest Welt-Datei (Template)
+# ------------------------------------------------------------
+# Diese Datei dient als Vorlage für automatisch erstellte
+# chestData/<welt>.yml Dateien. Sie enthält keine echten Daten,
+# sondern definiert nur die Struktur.
+#
+# Jede platzierte Inseltruhe wird in ihrer jeweiligen Welt-Datei
+# unter einem eindeutigen Schlüssel gespeichert (z. B. "chests.8f3a9d1a").
+#
+# ============================================================
 
 chests: {}
+
+# Beispielstruktur (wird automatisch generiert)
+#
+# chests:
+#   8f3a9d1a:                   # interner eindeutiger Eintrag
+#     loc: world,100,64,200     # Blockposition (Welt,X,Y,Z)
+#     islandID: e3bdf8a5-1a5d-41f3-9a10-2e6e4a91cb7a   # Insel-ID von BentoBox
+#     mode: input               # "input" = Einlagerung / "output" = Auslagerung
+#
+#     filter:                   # Filter-Slots 0–8 (optional)
+#       0:                      # (Leer = kein Filter)
+#       1:
+#         ==: org.bukkit.inventory.ItemStack
+#         v: 2975
+#         type: COBBLESTONE
+#       2:                      # usw.
+#       3:
+#
+# Hinweise:
+# - Wird eine Inseltruhe abgebaut, wird der Eintrag automatisch entfernt.
+# - Nicht geladene Welten werden beim Start übersprungen, bis sie geladen sind.
+# - Die Datei wird automatisch von IslandVault verwaltet.

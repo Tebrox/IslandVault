@@ -179,7 +179,8 @@ public class ChunkLoadListener implements Listener {
             //plugin.getLogger().info("[ChunkLoader] Chunk [" + cx + "," + cz + "] entladen → " + toRemove.size() + " VaultChests gespeichert und entfernt.");
         }
 
-        IslandVault.getConfigManager().saveConfig("chestData/" + worldName);
+        IslandVault.getConfigManager().markDirty("chestData/" + worldName);
+        //IslandVault.getConfigManager().saveConfig("chestData/" + worldName);
     }
 
     public void rebuildIndex() {

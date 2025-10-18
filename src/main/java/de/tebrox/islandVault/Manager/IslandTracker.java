@@ -1,17 +1,13 @@
 package de.tebrox.islandVault.Manager;
 
 import de.tebrox.islandVault.IslandVault;
-import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 

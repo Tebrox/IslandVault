@@ -3,14 +3,14 @@ package de.tebrox.islandVault.Manager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 
 public class ConfigManager {
@@ -18,6 +18,16 @@ public class ConfigManager {
     private final JavaPlugin plugin;
     private final Map<String, FileConfiguration> configs = new HashMap<>();
     private final Map<String, File> files = new HashMap<>();
+
+    private final Map<String, Boolean> dirtyFlags = new HashMap<>();
+    private final Map<String, BukkitRunnable> autosaveTasks = new HashMap<>();
+    private final long AUTOSAVE_DELAY_TICKS = 20L * 120; // 5 Sekunden
+
+    // Änderungsüberwachung
+    private final Map<String, List<Long>> changeHistory = new HashMap<>();
+    private static final int CHANGE_WINDOW_SECONDS = 10;
+    private static final int CHANGE_THRESHOLD = 100;
+
 
     public ConfigManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -121,16 +131,21 @@ public class ConfigManager {
      * Falls sie noch nicht geladen war, wird sie vorher erstellt.
      */
     public void saveConfig(String name) {
-        if (!configs.containsKey(name)) {
-            getConfig(name); // sicherstellen, dass sie geladen ist
+        if (!configs.containsKey(name) || !files.containsKey(name)) {
+            plugin.getLogger().warning("[ConfigManager] saveConfig() – Datei '" + name + "' nicht geladen.");
+            return;
         }
         try {
-            configs.get(name).save(files.get(name));
+            FileConfiguration config = configs.get(name);
+            File file = files.get(name);
+            config.save(file);
+            dirtyFlags.put(name, false);
+            plugin.getLogger().fine("[ConfigManager] Datei '" + name + "' gespeichert.");
         } catch (IOException e) {
-            plugin.getLogger().severe("Konnte Config " + name + ".yml nicht speichern!");
-            e.printStackTrace();
+            plugin.getLogger().severe("[ConfigManager] Fehler beim Speichern von '" + name + "': " + e.getMessage());
         }
     }
+
 
     /**
      * Speichert alle geladenen Configs.
@@ -154,6 +169,95 @@ public class ConfigManager {
     public void reloadAll() {
         configs.clear();
     }
+
+    public void markDirty(String name) {
+        long now = System.currentTimeMillis();
+
+        // Änderungs-Zeitpunkt aufzeichnen
+        changeHistory.computeIfAbsent(name, k -> new ArrayList<>()).add(now);
+        cleanupChangeHistory(name, now);
+
+        // Wenn zu viele Änderungen in kurzer Zeit erfolgen → Warnung ausgeben
+        if (changeHistory.get(name).size() >= CHANGE_THRESHOLD) {
+            plugin.getLogger().warning("[ConfigManager] WARNUNG: Datei '" + name
+                    + "' wurde in den letzten " + CHANGE_WINDOW_SECONDS + "s "
+                    + changeHistory.get(name).size() + "× geändert! "
+                    + "Prüfe, ob unnötige Saves oder Endlosschleifen auftreten.");
+            // Zurücksetzen, damit nicht jede Sekunde erneut gewarnt wird
+            changeHistory.get(name).clear();
+        }
+
+        dirtyFlags.put(name, true);
+
+        // Bestehenden Autosave abbrechen, falls noch aktiv
+        if (autosaveTasks.containsKey(name)) {
+            autosaveTasks.get(name).cancel();
+        }
+
+        // Neuen Autosave planen
+        BukkitRunnable task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (Boolean.TRUE.equals(dirtyFlags.get(name))) {
+                    saveConfig(name);
+                    dirtyFlags.put(name, false);
+                }
+                autosaveTasks.remove(name);
+            }
+        };
+        task.runTaskLater(plugin, AUTOSAVE_DELAY_TICKS);
+        autosaveTasks.put(name, task);
+    }
+
+    public void flushAllAutosaves() {
+        plugin.getLogger().info("[ConfigManager] Speichere alle pending Autosaves...");
+        for (String name : dirtyFlags.keySet()) {
+            if (Boolean.TRUE.equals(dirtyFlags.get(name))) {
+                saveConfig(name);
+            }
+        }
+        dirtyFlags.clear();
+    }
+
+    private void cleanupChangeHistory(String name, long now) {
+        List<Long> timestamps = changeHistory.get(name);
+        if (timestamps == null) return;
+
+        long cutoff = now - (CHANGE_WINDOW_SECONDS * 1000L);
+        timestamps.removeIf(t -> t < cutoff);
+    }
+
+    public void clearChangeTracking() {
+        changeHistory.clear();
+    }
+
+    public Map<String, Boolean> getDirtyFlags() {
+        return Collections.unmodifiableMap(dirtyFlags);
+    }
+
+    public Map<String, BukkitRunnable> getAutosaveTasks() {
+        return Collections.unmodifiableMap(autosaveTasks);
+    }
+
+    public Map<String, List<Long>> getChangeHistory() {
+        return Collections.unmodifiableMap(changeHistory);
+    }
+
+    /**
+     * Liefert die Anzahl der Änderungen innerhalb der letzten X Sekunden (z. B. 10 Sekunden).
+     */
+    public int getRecentChangeCount(String name) {
+        if (!changeHistory.containsKey(name)) return 0;
+        long now = System.currentTimeMillis();
+        long cutoff = now - (CHANGE_WINDOW_SECONDS * 1000L);
+        return (int) changeHistory.get(name).stream().filter(t -> t >= cutoff).count();
+    }
+
+
+    public int getChangeWindowSeconds() {
+        return CHANGE_WINDOW_SECONDS;
+    }
+
 
     // ============================================================
     // ==========       TEMPLATE-SYNCHRONISIERUNG           =======

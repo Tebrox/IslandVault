@@ -22,7 +22,8 @@ public enum Permissions {
     ADMIN_SET_DEBUGMODE("islandvault.command.admin.setDebugMode"),
 
     GROUPS_CONFIG("permission_groups"),
-    MESSAGE_ITEMLORE("messages.itemLore");
+    MESSAGE_ITEMLORE("messages.itemLore"),
+    ADMIN_DEBUG("islandvault.command.admin.debug");
 
     private String label;
 

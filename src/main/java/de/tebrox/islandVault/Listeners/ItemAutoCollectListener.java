@@ -6,7 +6,6 @@ import de.tebrox.islandVault.Utils.LuckPermsUtils;
 import de.tebrox.islandVault.Utils.PyrofishingUtils;
 import org.bukkit.*;
 import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ItemSpawnEvent;
@@ -18,83 +17,91 @@ import world.bentobox.bentobox.BentoBox;
 import world.bentobox.bentobox.database.objects.Island;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ItemAutoCollectListener implements Listener {
-    private IslandVault plugin;
-    private NamespacedKey dropMarkerKey;
+
+    private final IslandVault plugin;
+    private final NamespacedKey dropMarkerKey;
 
     public ItemAutoCollectListener(IslandVault plugin) {
         this.plugin = plugin;
-        dropMarkerKey = new NamespacedKey(plugin, "player_dropped");
+        this.dropMarkerKey = new NamespacedKey(plugin, "player_dropped");
     }
 
+    // Spielerwirft selbst etwas weg → markiere, damit es nicht eingesammelt wird
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         event.getItemDrop().getPersistentDataContainer().set(dropMarkerKey, PersistentDataType.INTEGER, 1);
     }
 
+    // Wenn ein Item gespawnt wird → prüfen, ob AutoCollect greifen soll
     @EventHandler
     public void onItemSpawn(ItemSpawnEvent event) {
         Item item = event.getEntity();
         PersistentDataContainer data = item.getPersistentDataContainer();
+        if (data.has(dropMarkerKey, PersistentDataType.INTEGER)) return; // Spieler-Drop ignorieren
 
-        if (data.has(dropMarkerKey, PersistentDataType.INTEGER)) return;
-
-        Location itemLocation = item.getLocation();
-
-        Optional<Island> optIsland = BentoBox.getInstance().getIslands().getIslandAt(itemLocation);
+        Location loc = item.getLocation();
+        Optional<Island> optIsland = BentoBox.getInstance().getIslands().getIslandAt(loc);
         if (optIsland.isEmpty()) return;
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> tryAutoCollect(item, optIsland.get()), 1L); // 5 Ticks Verzögerung (~0,25 Sek.)
+        Island island = optIsland.get();
+
+        // leicht verzögert, damit das Item stabil existiert
+        Bukkit.getScheduler().runTaskLater(plugin, () -> tryAutoCollect(item, island), 2L);
     }
 
+    // Hauptlogik: versuche Item in Insel-Vault einzusammeln
     private void tryAutoCollect(Item item, Island island) {
-        if(!item.isValid() || item.isDead() || PyrofishingUtils.isPyroFishingItem(item.getItemStack())) {
-            return;
-        }
+        if (!item.isValid() || item.isDead()) return;
 
+        ItemStack baseStack = item.getItemStack();
+        if (baseStack == null || baseStack.getType() == Material.AIR) return;
+        if (PyrofishingUtils.isPyroFishingItem(baseStack)) return;
+
+        // Insel-ID (String, BentoBox)
+        String islandId = island.getUniqueId();
+
+        // Prüfen, ob AutoCollect für diese Insel aktiv ist
+        if (!IslandVault.getVaultManager().autoCollectIsEnabled(islandId)) return;
+
+        // Sammelradius über Permission-System (Inselbesitzer)
         UUID ownerUUID = island.getOwner();
         if (ownerUUID == null) return;
-
-        if(!IslandVault.getVaultManager().autoCollectIsEnabled(ownerUUID)) {
-            return;
-        }
-
         int radius = LuckPermsUtils.getMaxRadiusFromPermissions(ownerUUID);
         if (radius <= 0) return;
 
-        var center = island.getCenter();
-        //if (item.getLocation().distanceSquared(center) > radius * radius) return;
-
+        Location center = island.getCenter();
         Location loc = item.getLocation();
+
+        // Nur XZ-Abstand prüfen
+        double dx = loc.getX() - center.getX();
+        double dz = loc.getZ() - center.getZ();
+        double distSquared = dx * dx + dz * dz;
+        if (distSquared > radius * radius) return;
 
         // Höhe prüfen
         int y = loc.getBlockY();
         if (y < -64 || y > 319) return;
 
-        // Abstand nur in X/Z berechnen
-        double dx = loc.getX() - center.getX();
-        double dz = loc.getZ() - center.getZ();
-        double distSquared = dx * dx + dz * dz;
+        // PermissionKey bestimmen
+        String permKey = IslandVault.getItemManager().buildPermissionKey(baseStack);
 
-        if (distSquared > radius * radius) return;
-
-        ItemStack baseStack = item.getItemStack();
-
-        boolean groupPermission = false;
-        List<String> groups = ItemGroupManager.findGroupsWithMaterial(item.getItemStack().getType().toString());
-        if(!groups.isEmpty()) {
-            for(String g : groups) {
-                if(LuckPermsUtils.hasPermissionForGroup(ownerUUID, g)) {
-                    groupPermission = true;
-                    break;
-                }
+        // Prüfen, ob Inseleigentümer oder Team Zugriff hat (per Gruppe oder Item)
+        boolean hasGroupPermission = false;
+        List<String> groups = ItemGroupManager.findGroupsWithMaterial(baseStack.getType().toString());
+        for (String g : groups) {
+            if (LuckPermsUtils.hasPermissionForGroup(ownerUUID, g)) {
+                hasGroupPermission = true;
+                break;
             }
         }
 
-        if (!LuckPermsUtils.hasPermissionForItem(ownerUUID, baseStack.getType()) && !groupPermission) return;
+        if (!LuckPermsUtils.hasPermission(ownerUUID, permKey) && !hasGroupPermission) {
+            return;
+        }
 
+        // Ähnliche Items im Umkreis zusammenfassen (Stack-Merge)
         List<Item> nearbyItems = item.getWorld().getNearbyEntities(item.getLocation(), 1, 1, 1).stream()
                 .filter(e -> e instanceof Item)
                 .map(e -> (Item) e)
@@ -112,8 +119,10 @@ public class ItemAutoCollectListener implements Listener {
             if (baseStack.getAmount() >= baseStack.getMaxStackSize()) break;
         }
 
-        IslandVault.getVaultManager().addItemToVault(baseStack.getType(), baseStack.getAmount(), ownerUUID, null);
+        // Jetzt in Insel-Vault hinzufügen (PermissionKey-basiert)
+        IslandVault.getVaultManager().addItemToIslandVault(baseStack, baseStack.getAmount(), islandId, null);
 
+        // Entferne das Item aus der Welt
         item.remove();
     }
 }

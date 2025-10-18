@@ -5,9 +5,7 @@ import de.tebrox.islandVault.Manager.IslandTracker;
 import de.tebrox.islandVault.Manager.LanguageManager;
 import de.tebrox.islandVault.Manager.MenuManager;
 import de.tebrox.islandVault.Utils.IslandUtils;
-import de.tebrox.islandVault.Utils.PlayerVaultUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,7 +17,6 @@ import world.bentobox.bentobox.api.events.island.IslandEnterEvent;
 import world.bentobox.bentobox.api.events.island.IslandExitEvent;
 import world.bentobox.bentobox.database.objects.Island;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public class IslandListener implements Listener {

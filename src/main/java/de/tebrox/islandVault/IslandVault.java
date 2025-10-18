@@ -3,6 +3,7 @@ package de.tebrox.islandVault;
 import de.tebrox.islandVault.Commands.AdminCommand.VaultAdminMainCommand;
 import de.tebrox.islandVault.Commands.VaultMainCommand;
 import de.tebrox.islandVault.Converter.ItemGroupConfigConverter;
+import de.tebrox.islandVault.Converter.VaultMigrationManager;
 import de.tebrox.islandVault.Enums.Permissions;
 import de.tebrox.islandVault.Items.VaultChest;
 import de.tebrox.islandVault.Items.VaultChestItem;
@@ -84,6 +85,9 @@ public final class IslandVault extends JavaPlugin {
         languageManager = new LanguageManager(this);
 
         itemManager = new ItemManager(this);
+
+        new VaultMigrationManager(this).migratePlayerVaultsToIslandVaults();
+
         vaultManager = new VaultManager(this);
 
         reloadPluginConfig(null);
@@ -158,6 +162,8 @@ public final class IslandVault extends JavaPlugin {
         }
 
         vaultChestManager.flushAndStopAsyncSave();
+        configManager.flushAllAutosaves();
+        configManager.clearChangeTracking();
     }
 
     public static IslandVault getPlugin() {
@@ -197,9 +203,9 @@ public final class IslandVault extends JavaPlugin {
         ItemGroupConfigConverter.convertOldGroups(this, configManager);
         ItemGroupManager.init(plugin, configManager);
 
-        for(Material material : itemManager.getMaterialList()) {
-            String permission = Permissions.VAULT.getLabel() + material.toString().toLowerCase();
-            if(PermissionUtils.registerPermission(permission, "Vault item " + material.toString(), PermissionDefault.FALSE)) {
+        for(ItemStack stack : itemManager.getItemList()) {
+            String permission = itemManager.buildPermissionKey(stack);
+            if(PermissionUtils.registerPermission(permission, "Vault item " + stack.toString(), PermissionDefault.FALSE)) {
                 //debugLogger.info("Registered vault item: " + material.toString());
             }else{
                 //debugLogger.warning("Cannot register vault item: " + material.toString());
@@ -217,6 +223,7 @@ public final class IslandVault extends JavaPlugin {
         AdminVaultLogger adminVaultLogger = new AdminVaultLogger(this);
 
         //getServer().getPluginManager().registerEvents(new OPJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new ItemPermissionCache(this, LuckPermsProvider.get(), itemManager), this);
         getServer().getPluginManager().registerEvents(new InventoryCloseListener(), this);
         getServer().getPluginManager().registerEvents(new ItemAutoCollectListener(this), this);
         getServer().getPluginManager().registerEvents(new IslandListener(), this);

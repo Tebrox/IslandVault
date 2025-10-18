@@ -14,6 +14,10 @@ public class LuckPermsUtils {
         return checkPermission(uuid, perm);
     }
 
+    public static boolean hasPermission(UUID uuid, String key) {
+        return checkPermission(uuid, key);
+    }
+
     public static boolean hasPermissionForGroup(UUID uuid, String group) {
         String perm = "islandvault.groups." + group;
         return checkPermission(uuid, perm);

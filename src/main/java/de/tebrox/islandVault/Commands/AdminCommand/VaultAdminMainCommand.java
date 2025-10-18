@@ -24,6 +24,7 @@ public class VaultAdminMainCommand extends MainCommand {
         subCommands.add(new ReloadConfigCommand());
         subCommands.add(new ReloadLanguageCommand());
         subCommands.add(new SetDebugModeCommand());
+        subCommands.add(new DebugCommand());
         //subCommands.add(new OpenPlayerVaultCommand());
 
 

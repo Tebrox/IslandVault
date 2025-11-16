@@ -1,9 +1,4 @@
----
-IslandVault – Fortschritt, Roadmap und Änderungen
----
-
-
-# 🏝️ IslandVault – Fortschritt und Updates
+# 🏝️ IslandVault – Fortschritt & Updates
 Diese Seite zeigt den aktuellen Entwicklungsstand, neue Funktionen, geplante Änderungen und alle laufenden Arbeiten am Plugin.
 
 ---

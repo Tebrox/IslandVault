@@ -34,6 +34,7 @@ Das vollständige Board mit allen Aufgaben findest du hier:
 
 Hier werden alle Features als Issues geführt und der Status in Spalten geschoben:
 - **To Do**
+- **In Arbeit- Hohe Priorität**
 - **In Arbeit**
 - **Testing**
 - **Fertig**

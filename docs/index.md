@@ -46,7 +46,7 @@ Hier werden alle Features als Issues geführt und der Status in Spalten geschobe
 - [ ] VaultMenu-Optimierung
 - [ ] Auto-Collect Statistik
 
-### Version 1.2.6 (2025-11-10)
+### Version 1.2.6 (16.11.2025)
 - [x] AutoCollect Rand-Fix  
 - [x] Debug-Verbesserungen  
 - [x] IslandTracker Fix  

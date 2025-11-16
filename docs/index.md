@@ -50,6 +50,8 @@ Hier werden alle Features als Issues geführt und der Status in Spalten geschobe
 - [x] AutoCollect Rand-Fix  
 - [x] Debug-Verbesserungen  
 - [x] IslandTracker Fix  
+- [x] Performance Verbesserungen
+- [x] Umstellung das alle Inselmitglieder Lagererweiterungen kaufen können
 
 ---
 

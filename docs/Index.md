@@ -34,7 +34,7 @@ Diese Seite zeigt den aktuellen Entwicklungsstand, neue Funktionen, geplante Än
 Das vollständige Board mit allen Aufgaben findest du hier:
 
 👉 **Project-Board:**  
-[📘 Zur IslandVault Roadmap](https://github.com/Tebrox/IslandVault/projects/1)
+[📘 Zur IslandVault Roadmap](https://github.com/users/Tebrox/projects/1)
 
 Hier werden alle Features als Issues geführt und der Status in Spalten geschoben:
 - **To Do**

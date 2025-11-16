@@ -61,7 +61,7 @@ Hier werden alle Features als Issues geführt und der Status in Spalten geschobe
 ---
 
 ## 🔧 Entwicklung & Support
-- **GitHub:** https://ggithub.com/Tebrox/IslandVault 
-- **Issues melden:** https://github.com/Tebrox/IslandVault/issues  
+- [GitHub](https://github.com/Tebrox/IslandVault) 
+- [Issues melden](https://github.com/Tebrox/IslandVault/issues)
 
 ---
